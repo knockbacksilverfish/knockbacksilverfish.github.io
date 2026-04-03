@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Channel Zoo — Daily Animal TV</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1410;
+  --crt-body:#1c1c1e;
+  --crt-bezel:#121214;
+  --crt-rim:#3a3a3d;
+  --screen-bg:#0a0d06;
+  --phosphor:#33ff33;
+  --amber:#ffb347;
+  --green-led:#30d158;
+  --cream:#f5e6c8;
+  --knob:#4a4a4c;
+  --knob-hl:#6e6e70;
+  --text-glow:0 0 10px var(--phosphor),0 0 20px var(--phosphor),0 0 40px rgba(51,255,51,0.3);
+  --amber-glow:0 0 8px var(--amber),0 0 16px rgba(255,179,71,0.4);
+}
+html{height:100%}
+body{
+  background:var(--bg);
+  font-family:'VT323',monospace;
+  color:var(--cream);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* 70s wood panel wallpaper */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    repeating-linear-gradient(90deg,rgba(92,61,30,0.15) 0px,rgba(92,61,30,0.15) 2px,transparent 2px,transparent 60px),
+    repeating-linear-gradient(0deg,rgba(0,0,0,0.06) 0px,transparent 1px,transparent 3px),
+    linear-gradient(180deg,#1a1410,#231c14 50%,#1a1410);
+}
+
+/* subtle scanline over whole page */
+body::after{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+}
+
+.page{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;
+  min-height:100vh;padding:2rem 1rem;
+}
+
+/* ── HEADER ── */
+.header{text-align:center;margin-bottom:1.5rem;animation:flicker-in 1.5s ease-out}
+.header h1{
+  font-family:'Press Start 2P',monospace;font-size:1.6rem;
+  color:var(--phosphor);text-shadow:var(--text-glow);
+  letter-spacing:0.05em;line-height:1.4;
+}
+.header .tagline{font-size:1.3rem;color:var(--amber);text-shadow:var(--amber-glow);margin-top:0.6rem}
+
+/* ── CRT TELEVISION ── */
+.tv-set{position:relative;width:700px;max-width:95vw;animation:tv-on 0.8s ease-out 0.3s both}
+.tv-body{
+  background:linear-gradient(145deg,#2e2e30,#1c1c1e 40%,#141416);
+  border-radius:24px;padding:28px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.06),0 0 0 2px var(--crt-rim);
+  position:relative;
+}
+.tv-body::before{
+  content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:120px;height:6px;
+  background:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(0,0,0,0.5) 4px,rgba(0,0,0,0.5) 6px);
+  border-radius:3px;
+}
+.screen-bezel{background:var(--crt-bezel);border-radius:16px;padding:16px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.8)}
+.screen{
+  position:relative;background:var(--screen-bg);border-radius:12px;
+  overflow:hidden;aspect-ratio:4/3;
+  box-shadow:inset 0 0 60px rgba(0,0,0,0.5),0 0 2px rgba(51,255,51,0.1);
+}
+/* CRT curvature */
+.screen::before{
+  content:'';position:absolute;inset:0;z-index:5;pointer-events:none;border-radius:12px;
+  background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,0.03),transparent 60%);
+  box-shadow:inset 0 0 80px rgba(0,0,0,0.4);
+}
+/* scanlines on screen */
+.screen::after{
+  content:'';position:absolute;inset:0;z-index:6;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0px,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);
+  mix-blend-mode:multiply;
+}
+.screen img{
+  width:100%;height:100%;object-fit:cover;
+  filter:brightness(1.05) contrast(1.1) saturate(0.9);
+  opacity:0;transition:opacity 0.5s ease;
+}
+.screen img.loaded{opacity:1}
+.screen-glow{position:absolute;inset:-2px;z-index:0;border-radius:14px;box-shadow:0 0 15px rgba(51,255,51,0.05);pointer-events:none}
+.screen .loader{
+  position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;color:var(--phosphor);
+  font-size:1.4rem;text-shadow:var(--text-glow);
+}
+.screen .loader.hidden{display:none}
+.static-noise{
+  position:absolute;inset:0;z-index:2;opacity:0.3;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:static-flicker 0.15s infinite;pointer-events:none;
+}
+.screen img.loaded ~ .static-noise{opacity:0;transition:opacity 0.4s}
+.channel-indicator{
+  position:absolute;top:16px;right:20px;z-index:10;
+  font-family:'Press Start 2P',monospace;font-size:1.4rem;
+  color:#fff;text-shadow:0 0 6px rgba(255,255,255,0.6);
+  opacity:0;transition:opacity 0.3s;pointer-events:none;
+}
+.channel-indicator.show{animation:ch-flash 1.8s ease-out forwards}
+
+/* TV controls */
+.tv-controls{display:flex;align-items:center;justify-content:space-between;padding:16px 8px 4px}
+.tv-brand{font-family:'Special Elite',serif;font-size:0.95rem;color:#6e6e70;letter-spacing:0.15em;text-transform:uppercase}
+.controls-right{display:flex;align-items:center;gap:16px}
+.knob-group{display:flex;align-items:center;gap:10px}
+.knob{
+  width:36px;height:36px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,var(--knob-hl),var(--knob));
+  box-shadow:0 2px 6px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:transform 0.15s ease;user-select:none;
+}
+.knob:active{transform:scale(0.92)}
+.knob span{font-size:1.2rem;color:#aaa;line-height:1}
+.power-led{
+  width:8px;height:8px;border-radius:50%;background:var(--green-led);
+  box-shadow:0 0 6px var(--green-led),0 0 12px rgba(48,209,88,0.3);margin-left:8px;
+}
+
+/* TV legs */
+.tv-legs{display:flex;justify-content:center;gap:300px;margin-top:-2px}
+.tv-leg{width:8px;height:40px;background:linear-gradient(180deg,var(--crt-rim),#2a2a2c);border-radius:0 0 3px 3px}
+
+/* ── CHANNEL BAR ── */
+.channels-bar{
+  display:flex;gap:0;margin-top:1.8rem;border-radius:8px;overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:fadeUp 0.8s ease-out 0.6s both;
+}
+.ch-btn{
+  flex:1;padding:0.8rem 1.5rem;font-family:'VT323',monospace;font-size:1.25rem;
+  border:none;cursor:pointer;transition:all 0.2s ease;position:relative;
+  background:#1e1e20;color:#888;letter-spacing:0.05em;min-width:100px;
+}
+.ch-btn:not(:last-child){border-right:1px solid #333}
+.ch-btn:hover{background:#2a2a2c;color:#ccc}
+.ch-btn.active{background:var(--screen-bg);color:var(--phosphor);text-shadow:var(--text-glow)}
+.ch-btn .ch-num{display:block;font-family:'Press Start 2P',monospace;font-size:0.55rem;margin-bottom:0.3rem;opacity:0.5}
+
+/* ── QUOTE ── */
+.quote-section{margin-top:1.8rem;width:700px;max-width:95vw;animation:fadeUp 0.8s ease-out 0.8s both}
+.quote-box{
+  background:linear-gradient(135deg,rgba(30,30,32,0.9),rgba(20,20,22,0.95));
+  border:1px solid #2a2a2c;border-radius:12px;padding:1.4rem 1.8rem;position:relative;overflow:hidden;
+}
+.quote-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent)}
+.quote-label{font-family:'Press Start 2P',monospace;font-size:0.5rem;color:var(--amber);text-shadow:var(--amber-glow);letter-spacing:0.15em;margin-bottom:0.7rem;text-transform:uppercase}
+.quote-text{font-size:1.35rem;line-height:1.5;color:var(--cream);font-style:italic}
+.quote-author{margin-top:0.6rem;font-size:1rem;color:var(--amber);text-shadow:var(--amber-glow)}
+
+/* ── INFO BAR ── */
+.info-bar{margin-top:1.2rem;width:700px;max-width:95vw;display:flex;gap:1rem;animation:fadeUp 0.8s ease-out 1s both;flex-wrap:wrap}
+.info-card{flex:1;min-width:140px;background:rgba(30,30,32,0.7);border:1px solid #2a2a2c;border-radius:8px;padding:1rem;text-align:center}
+.info-card .label{font-size:0.7rem;font-family:'Press Start 2P',monospace;color:var(--phosphor);text-shadow:0 0 6px rgba(51,255,51,0.3);letter-spacing:0.08em;margin-bottom:0.4rem}
+.info-card .value{font-size:1.3rem;color:var(--cream)}
+
+footer{margin-top:2rem;padding:1rem;text-align:center;color:#555;font-size:0.9rem}
+footer a{color:var(--amber);text-decoration:none}
+
+/* ── ANIMATIONS ── */
+@keyframes flicker-in{0%{opacity:0;filter:brightness(3)}10%{opacity:1;filter:brightness(1.5)}12%{opacity:0.7}14%{opacity:1}100%{filter:brightness(1)}}
+@keyframes tv-on{0%{opacity:0;transform:scaleY(0.01) scaleX(0.8)}40%{transform:scaleY(0.01) scaleX(1)}60%{transform:scaleY(1) scaleX(1);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes static-flicker{0%{transform:translate(0,0)}25%{transform:translate(-1px,1px)}50%{transform:translate(1px,-1px)}75%{transform:translate(-1px,-1px)}100%{transform:translate(1px,0)}}
+@keyframes ch-flash{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+
+.screen.switching img{opacity:0!important;transition:none}
+.screen.switching .static-noise{opacity:0.6!important;transition:none}
+
+/* ══════════════════════════════════════════
+   MOBILE — Vintage phone frame
+   ══════════════════════════════════════════ */
+@media(max-width:640px){
+  .page{padding:1.2rem 0.5rem}
+  .header h1{font-size:0.95rem}
+  .header .tagline{font-size:1rem}
+  .tv-legs{display:none}
+  .tv-set{width:95vw}
+  .tv-body{
+    border-radius:32px;padding:18px 12px;
+    background:linear-gradient(160deg,#3a3a3c,#1c1c1e 30%,#0e0e10 70%,#2a2a2c);
+    box-shadow:0 15px 50px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.08),0 0 0 3px #0a0a0c,0 0 0 5px #3a3a3c;
+  }
+  .tv-body::before{display:none}
+  .tv-body::after{
+    content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);
+    width:50px;height:4px;background:#333;border-radius:4px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .screen-bezel{border-radius:8px;padding:6px}
+  .screen{border-radius:6px;aspect-ratio:3/4}
+  .tv-controls{padding:12px 6px 6px;justify-content:center}
+  .tv-brand{display:none}
+  .knob{width:32px;height:32px}
+  .channels-bar{margin-top:1.2rem;border-radius:6px}
+  .ch-btn{padding:0.6rem 0.3rem;font-size:1.05rem;min-width:0}
+  .ch-btn .ch-num{font-size:0.45rem}
+  .quote-section{max-width:95vw}
+  .quote-box{padding:1rem 1.2rem}
+  .quote-text{font-size:1.15rem}
+  .info-bar{max-width:95vw;gap:0.5rem}
+  .info-card{padding:0.7rem}
+  .info-card .label{font-size:0.55rem}
+  .info-card .value{font-size:1.1rem}
+}
+@media(max-width:380px){
+  .header h1{font-size:0.8rem}
+  .channels-bar{flex-wrap:wrap;border-radius:6px}
+  .ch-btn{flex:1 1 45%}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="header">
+    <h1>CHANNEL ZOO</h1>
+    <div class="tagline">Daily Animal Television</div>
+  </header>
+
+  <div class="tv-set">
+    <div class="tv-body">
+      <div class="screen-bezel">
+        <div class="screen-glow"></div>
+        <div class="screen" id="screen">
+          <img id="animal-img" alt="Animal of the day" />
+          <div class="static-noise" id="static"></div>
+          <div class="loader" id="loader"><span>TUNING...</span></div>
+          <div class="channel-indicator" id="ch-indicator">CH 1</div>
+        </div>
+      </div>
+      <div class="tv-controls">
+        <div class="tv-brand">ChannelZoo&trade; 1987</div>
+        <div class="controls-right">
+          <div class="knob-group">
+            <div class="knob" onclick="prevChannel()" title="Previous channel"><span>&#9664;</span></div>
+            <div class="knob" onclick="nextChannel()" title="Next channel"><span>&#9654;</span></div>
+          </div>
+          <div class="knob" onclick="loadAnimal()" title="Refresh"><span>&#8635;</span></div>
+          <div class="power-led"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tv-legs"><div class="tv-leg"></div><div class="tv-leg"></div></div>
+  </div>
+
+  <div class="channels-bar">
+    <button class="ch-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="ch-num">CH 1</span>&#x1F431; CATS</button>
+    <button class="ch-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="ch-num">CH 2</span>&#x1F438; FROGS</button>
+    <button class="ch-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="ch-num">CH 3</span>&#x1F43B; BEARS</button>
+    <button class="ch-btn" data-channel="dog" onclick="switchChannel('dog',this)"><span class="ch-num">CH 4</span>&#x1F436; DOGS</button>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-box">
+      <div class="quote-label">&#x1F4E1; Daily Broadcast</div>
+      <div class="quote-text" id="quote-text">Loading transmission...</div>
+      <div class="quote-author" id="quote-author"></div>
+    </div>
+  </div>
+
+  <div class="info-bar">
+    <div class="info-card"><div class="label">DATE</div><div class="value" id="info-date"></div></div>
+    <div class="info-card"><div class="label">CHANNEL</div><div class="value" id="info-channel">CH 1 &#8212; CATS</div></div>
+    <div class="info-card"><div class="label">SIGNAL</div><div class="value" id="info-signal">&#x2588;&#x2588;&#x2588;&#x2588;&#x2592; 92%</div></div>
+  </div>
+
+  <footer>A retro broadcast from <a href="#">Channel Zoo</a> &bull; Images via open APIs</footer>
+</div>
+
+<script>
+const channels=['cat','frog','bear','dog'];
+const channelNames={cat:'CATS',frog:'FROGS',bear:'BEARS',dog:'DOGS'};
+let currentChannel='cat';
+
+const quotes=[
+  {text:"The only way to do great work is to love what you do.",author:"Steve Jobs"},
+  {text:"In the middle of difficulty lies opportunity.",author:"Albert Einstein"},
+  {text:"Believe you can and you're halfway there.",author:"Theodore Roosevelt"},
+  {text:"Every day is a new beginning. Take a deep breath and start again.",author:"Unknown"},
+  {text:"Happiness is not something ready made. It comes from your own actions.",author:"Dalai Lama"},
+  {text:"The best time to plant a tree was 20 years ago. The second best time is now.",author:"Chinese Proverb"},
+  {text:"You are never too old to set another goal or to dream a new dream.",author:"C.S. Lewis"},
+  {text:"Act as if what you do makes a difference. It does.",author:"William James"},
+  {text:"What lies behind us and what lies before us are tiny matters compared to what lies within us.",author:"Ralph Waldo Emerson"},
+  {text:"The future belongs to those who believe in the beauty of their dreams.",author:"Eleanor Roosevelt"},
+  {text:"It is during our darkest moments that we must focus to see the light.",author:"Aristotle"},
+  {text:"Keep your face always toward the sunshine and shadows will fall behind you.",author:"Walt Whitman"},
+  {text:"Wherever you go, go with all your heart.",author:"Confucius"},
+  {text:"Start where you are. Use what you have. Do what you can.",author:"Arthur Ashe"},
+  {text:"The secret of getting ahead is getting started.",author:"Mark Twain"},
+  {text:"Nothing is impossible. The word itself says I am possible.",author:"Audrey Hepburn"},
+  {text:"The only limit to our realization of tomorrow will be our doubts of today.",author:"Franklin D. Roosevelt"},
+  {text:"Do what you can, with what you have, where you are.",author:"Theodore Roosevelt"},
+  {text:"Hardships often prepare ordinary people for an extraordinary destiny.",author:"C.S. Lewis"},
+  {text:"Be yourself; everyone else is already taken.",author:"Oscar Wilde"},
+  {text:"Everything you have ever wanted is on the other side of fear.",author:"George Addair"},
+  {text:"Success is not final, failure is not fatal: it is the courage to continue that counts.",author:"Winston Churchill"},
+  {text:"Your time is limited, do not waste it living someone else's life.",author:"Steve Jobs"},
+  {text:"Turn your wounds into wisdom.",author:"Oprah Winfrey"},
+  {text:"If you want to lift yourself up, lift up someone else.",author:"Booker T. Washington"},
+  {text:"We may encounter many defeats but we must not be defeated.",author:"Maya Angelou"},
+  {text:"Spread love everywhere you go. Let no one ever come to you without leaving happier.",author:"Mother Teresa"},
+  {text:"The best revenge is massive success.",author:"Frank Sinatra"},
+  {text:"Life is ten percent what happens to you and ninety percent how you react to it.",author:"Charles Swindoll"},
+  {text:"An unexamined life is not worth living.",author:"Socrates"},
+  {text:"Courage is not the absence of fear but the triumph over it.",author:"Nelson Mandela"}
+];
+
+const today=new Date();
+const dayOfYear=Math.floor((today-new Date(today.getFullYear(),0,0))/86400000);
+const dailyQuote=quotes[dayOfYear%quotes.length];
+
+document.getElementById('info-date').textContent=today.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+document.getElementById('quote-text').textContent='\u201C'+dailyQuote.text+'\u201D';
+document.getElementById('quote-author').textContent='\u2014 '+dailyQuote.author;
+
+const signals=['\u2588\u2588\u2588\u2588\u2588 100%','\u2588\u2588\u2588\u2588\u2592 92%','\u2588\u2588\u2588\u2592\u2592 78%','\u2588\u2588\u2588\u2588\u2592 88%','\u2588\u2588\u2588\u2588\u2588 97%'];
+document.getElementById('info-signal').textContent=signals[dayOfYear%signals.length];
+
+async function loadAnimal(){
+  const img=document.getElementById('animal-img');
+  const loader=document.getElementById('loader');
+  loader.innerHTML='<span>TUNING...</span>';
+  img.classList.remove('loaded');
+  loader.classList.remove('hidden');
+  document.getElementById('static').style.opacity='0.4';
+
+  let url='';
+  try{
+    if(currentChannel==='cat'){
+      const r=await fetch('https://api.thecatapi.com/v1/images/search?size=med');
+      const d=await r.json(); url=d[0].url;
+    }else if(currentChannel==='dog'){
+      const r=await fetch('https://dog.ceo/api/breeds/image/random');
+      const d=await r.json(); url=d.message;
+    }else if(currentChannel==='frog'){
+      const frogs=[
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Atelopus_zeteki1.jpg/800px-Atelopus_zeteki1.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Dendropsophus_microcephalus.jpg/800px-Dendropsophus_microcephalus.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Agalychnis_callidryas_%28red-eyed_tree_frog%29.jpg/800px-Agalychnis_callidryas_%28red-eyed_tree_frog%29.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Phyllobates_terribilis_%28Yellow%29.jpg/800px-Phyllobates_terribilis_%28Yellow%29.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bombina_variegata_2.jpg/800px-Bombina_variegata_2.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Rhacophorus_nigropalmatus.jpg/800px-Rhacophorus_nigropalmatus.jpg',
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Litoria_chloris_calling.jpg/800px-Litoria_chloris_calling.jpg'
+      ];
+      url=frogs[Math.floor(Math.random()*frogs.length)];
+    }else if(currentChannel==='bear'){
+      const w=600+Math.floor(Math.random()*200);
+      const h=400+Math.floor(Math.random()*200);
+      url='https://placebear.com/'+w+'/'+h;
+    }
+  }catch(e){loader.innerHTML='<span>NO SIGNAL</span>';return}
+
+  img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
+  img.onerror=()=>{loader.innerHTML='<span>WEAK SIGNAL</span>'};
+  img.src=url;
+}
+
+function switchChannel(ch,btnEl){
+  if(ch===currentChannel)return;
+  currentChannel=ch;
+  document.querySelectorAll('.ch-btn').forEach(b=>b.classList.remove('active'));
+  if(btnEl)btnEl.classList.add('active');
+  const chNum=channels.indexOf(ch)+1;
+  const indicator=document.getElementById('ch-indicator');
+  indicator.textContent='CH '+chNum;
+  indicator.classList.remove('show');
+  void indicator.offsetWidth;
+  indicator.classList.add('show');
+  document.getElementById('info-channel').textContent='CH '+chNum+' \u2014 '+channelNames[ch];
+  const screen=document.getElementById('screen');
+  screen.classList.add('switching');
+  setTimeout(()=>{screen.classList.remove('switching');loadAnimal()},300);
+}
+
+function nextChannel(){
+  const i=channels.indexOf(currentChannel);
+  const next=channels[(i+1)%channels.length];
+  switchChannel(next,document.querySelector('[data-channel="'+next+'"]'));
+}
+function prevChannel(){
+  const i=channels.indexOf(currentChannel);
+  const prev=channels[(i-1+channels.length)%channels.length];
+  switchChannel(prev,document.querySelector('[data-channel="'+prev+'"]'));
+}
+
+loadAnimal();
+</script>
+</body>
+</html>
+
