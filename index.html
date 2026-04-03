@@ -158,6 +158,7 @@ body::after{
   flex:1;padding:0.8rem 1.5rem;font-family:'VT323',monospace;font-size:1.25rem;
   border:none;cursor:pointer;transition:all 0.2s ease;position:relative;
   background:#1e1e20;color:#888;letter-spacing:0.05em;min-width:120px;
+  text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
 .ch-btn:not(:last-child){border-right:1px solid #333}
 .ch-btn:hover{background:#2a2a2c;color:#ccc}
@@ -273,9 +274,9 @@ footer a{color:var(--amber);text-decoration:none}
   </div>
 
   <div class="channels-bar">
-    <button class="ch-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="ch-num">CH 1</span>&#x1F431; CATS</button>
-    <button class="ch-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="ch-num">CH 2</span>&#x1F438; FROGS</button>
-    <button class="ch-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="ch-num">CH 3</span>&#x1F43B; BEARS</button>
+    <button class="ch-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="ch-num">CH 1</span><span>&#x1F431; CATS</span></button>
+    <button class="ch-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="ch-num">CH 2</span><span>&#x1F438; FROGS</span></button>
+    <button class="ch-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="ch-num">CH 3</span><span>&#x1F43B; BEARS</span></button>
   </div>
 
   <div class="info-bar">
@@ -294,18 +295,12 @@ footer a{color:var(--amber);text-decoration:none}
   <footer>A retro broadcast from <a href="#">Esquisse TV</a></footer>
 </div>
 
+
 <script>
-/* ═══════════════════════════════════════════
-   CONFIG
-   ═══════════════════════════════════════════ */
 const channels = ['cat','frog','bear'];
 const channelNames = {cat:'CATS',frog:'FROGS',bear:'BEARS'};
 let currentChannel = 'cat';
 
-/* ═══════════════════════════════════════════
-   DAILY SEED — same image all day per channel
-   Uses day-of-year as a deterministic seed
-   ═══════════════════════════════════════════ */
 const today = new Date();
 const dayOfYear = Math.floor((today - new Date(today.getFullYear(),0,0)) / 86400000);
 
@@ -315,9 +310,6 @@ document.getElementById('info-date').textContent =
 const signals = ['\u2588\u2588\u2588\u2588\u2588 100%','\u2588\u2588\u2588\u2588\u2592 92%','\u2588\u2588\u2588\u2592\u2592 78%','\u2588\u2588\u2588\u2588\u2592 88%','\u2588\u2588\u2588\u2588\u2588 97%'];
 document.getElementById('info-signal').textContent = signals[dayOfYear % signals.length];
 
-/* ═══════════════════════════════════════════
-   COUNTDOWN to midnight (next broadcast)
-   ═══════════════════════════════════════════ */
 function updateCountdown(){
   const now = new Date();
   const midnight = new Date(now);
@@ -332,24 +324,40 @@ function updateCountdown(){
 updateCountdown();
 setInterval(updateCountdown, 1000);
 
-/* ═══════════════════════════════════════════
-   DAILY IMAGE CACHE
-   Each channel stores its daily image in sessionStorage
-   keyed by channel+dayOfYear so it persists during the session
-   but resets each new day.
-   ═══════════════════════════════════════════ */
+/* Daily cache using localStorage — persists across refreshes.
+   Key includes dayOfYear so it auto-expires next day. */
 function getCacheKey(ch){ return 'esquisse_'+ch+'_'+dayOfYear; }
 
 function getCachedUrl(ch){
-  try{ return sessionStorage.getItem(getCacheKey(ch)); }catch(e){ return null; }
+  try{ return localStorage.getItem(getCacheKey(ch)); }catch(e){ return null; }
 }
 function setCachedUrl(ch, url){
-  try{ sessionStorage.setItem(getCacheKey(ch), url); }catch(e){}
+  try{
+    // Clean old keys for this channel
+    for(let i = localStorage.length - 1; i >= 0; i--){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('esquisse_'+ch+'_') && k !== getCacheKey(ch)){
+        localStorage.removeItem(k);
+      }
+    }
+    localStorage.setItem(getCacheKey(ch), url);
+  }catch(e){}
 }
 
-/* ═══════════════════════════════════════════
-   FETCH — one image per channel per day
-   ═══════════════════════════════════════════ */
+/* Helper: fetch images from Wikimedia Commons API */
+async function fetchWikimediaImages(searchTerm){
+  const apiUrl = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='
+    +encodeURIComponent(searchTerm)
+    +'&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*';
+  const r = await fetch(apiUrl);
+  const d = await r.json();
+  if(!d.query || !d.query.pages) return [];
+  return Object.values(d.query.pages)
+    .filter(p => p.imageinfo && p.imageinfo[0] && p.imageinfo[0].thumburl)
+    .map(p => p.imageinfo[0].thumburl);
+}
+
+/* FETCH — one image per channel per day */
 async function loadAnimal(){
   const img = document.getElementById('animal-img');
   const loader = document.getElementById('loader');
@@ -358,7 +366,7 @@ async function loadAnimal(){
   loader.classList.remove('hidden');
   document.getElementById('static').style.opacity = '0.4';
 
-  // Check cache first
+  // Check cache — same image all day even after refresh
   const cached = getCachedUrl(currentChannel);
   if(cached){
     img.onload = ()=>{ img.classList.add('loaded'); loader.classList.add('hidden'); };
@@ -374,60 +382,41 @@ async function loadAnimal(){
       const d = await r.json();
       url = d[0].url;
     } else if(currentChannel === 'frog'){
-      const apiUrl = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=frog+amphibian&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*';
-      const r = await fetch(apiUrl);
-      const d = await r.json();
-      const pages = d.query.pages;
-      const imgs = Object.values(pages)
-        .filter(p => p.imageinfo && p.imageinfo[0].thumburl)
-        .map(p => p.imageinfo[0].thumburl);
-      if(imgs.length > 0){
-        url = imgs[dayOfYear % imgs.length];
-      }
+      const imgs = await fetchWikimediaImages('frog amphibian photo');
+      if(imgs.length > 0) url = imgs[dayOfYear % imgs.length];
     } else if(currentChannel === 'bear'){
-      // Use Wikimedia Commons API for bears too
-      const apiUrl = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=bear+ursidae&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*';
-      const r = await fetch(apiUrl);
-      const d = await r.json();
-      const pages = d.query.pages;
-      const imgs = Object.values(pages)
-        .filter(p => p.imageinfo && p.imageinfo[0].thumburl)
-        .map(p => p.imageinfo[0].thumburl);
-      if(imgs.length > 0){
-        url = imgs[dayOfYear % imgs.length];
-      }
+      const imgs = await fetchWikimediaImages('bear ursidae photo');
+      if(imgs.length > 0) url = imgs[dayOfYear % imgs.length];
     }
   }catch(e){
     loader.innerHTML='<span>NO SIGNAL</span>';
     return;
   }
 
-  if(url) setCachedUrl(currentChannel, url);
+  if(!url){
+    loader.innerHTML='<span>NO SIGNAL</span>';
+    return;
+  }
+
+  setCachedUrl(currentChannel, url);
 
   img.onload = ()=>{ img.classList.add('loaded'); loader.classList.add('hidden'); };
   img.onerror = ()=>{ loader.innerHTML='<span>WEAK SIGNAL</span>'; };
-  img.dataset.retried = '';
   img.src = url;
 }
 
-/* ═══════════════════════════════════════════
-   CHANNEL SWITCHING
-   ═══════════════════════════════════════════ */
 function switchChannel(ch, btnEl){
   if(ch === currentChannel) return;
   currentChannel = ch;
   document.querySelectorAll('.ch-btn').forEach(b=>b.classList.remove('active'));
   if(btnEl) btnEl.classList.add('active');
-
   const chNum = channels.indexOf(ch)+1;
   const indicator = document.getElementById('ch-indicator');
   indicator.textContent = 'CH '+chNum;
   indicator.classList.remove('show');
   void indicator.offsetWidth;
   indicator.classList.add('show');
-
   document.getElementById('info-channel').textContent = 'CH '+chNum+' \u2014 '+channelNames[ch];
-
   const screen = document.getElementById('screen');
   screen.classList.add('switching');
   setTimeout(()=>{ screen.classList.remove('switching'); loadAnimal(); }, 300);
@@ -444,9 +433,6 @@ function prevChannel(){
   switchChannel(prev, document.querySelector('[data-channel="'+prev+'"]'));
 }
 
-/* ═══════════════════════════════════════════
-   BOOT
-   ═══════════════════════════════════════════ */
 loadAnimal();
 </script>
 </body>
