@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Channel Zoo — Daily Animal TV</title>
+<title>Esquisse TV</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg:#1a1410;
-  --crt-body:#1c1c1e;
   --crt-bezel:#121214;
   --crt-rim:#3a3a3d;
   --screen-bg:#0a0d06;
@@ -40,7 +39,7 @@ body::before{
     linear-gradient(180deg,#1a1410,#231c14 50%,#1a1410);
 }
 
-/* subtle scanline over whole page */
+/* subtle page scanlines */
 body::after{
   content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
   background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
@@ -69,6 +68,7 @@ body::after{
   box-shadow:0 20px 60px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.06),0 0 0 2px var(--crt-rim);
   position:relative;
 }
+/* vent slots */
 .tv-body::before{
   content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
   width:120px;height:6px;
@@ -87,7 +87,7 @@ body::after{
   background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,0.03),transparent 60%);
   box-shadow:inset 0 0 80px rgba(0,0,0,0.4);
 }
-/* scanlines on screen */
+/* screen scanlines */
 .screen::after{
   content:'';position:absolute;inset:0;z-index:6;pointer-events:none;
   background:repeating-linear-gradient(0deg,transparent 0px,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);
@@ -100,23 +100,29 @@ body::after{
 }
 .screen img.loaded{opacity:1}
 .screen-glow{position:absolute;inset:-2px;z-index:0;border-radius:14px;box-shadow:0 0 15px rgba(51,255,51,0.05);pointer-events:none}
+
+/* loader */
 .screen .loader{
   position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;
   align-items:center;justify-content:center;color:var(--phosphor);
   font-size:1.4rem;text-shadow:var(--text-glow);
 }
 .screen .loader.hidden{display:none}
+
+/* static noise */
 .static-noise{
   position:absolute;inset:0;z-index:2;opacity:0.3;
   background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   animation:static-flicker 0.15s infinite;pointer-events:none;
 }
 .screen img.loaded ~ .static-noise{opacity:0;transition:opacity 0.4s}
+
+/* channel indicator overlay */
 .channel-indicator{
   position:absolute;top:16px;right:20px;z-index:10;
   font-family:'Press Start 2P',monospace;font-size:1.4rem;
   color:#fff;text-shadow:0 0 6px rgba(255,255,255,0.6);
-  opacity:0;transition:opacity 0.3s;pointer-events:none;
+  opacity:0;pointer-events:none;
 }
 .channel-indicator.show{animation:ch-flash 1.8s ease-out forwards}
 
@@ -151,29 +157,33 @@ body::after{
 .ch-btn{
   flex:1;padding:0.8rem 1.5rem;font-family:'VT323',monospace;font-size:1.25rem;
   border:none;cursor:pointer;transition:all 0.2s ease;position:relative;
-  background:#1e1e20;color:#888;letter-spacing:0.05em;min-width:100px;
+  background:#1e1e20;color:#888;letter-spacing:0.05em;min-width:120px;
 }
 .ch-btn:not(:last-child){border-right:1px solid #333}
 .ch-btn:hover{background:#2a2a2c;color:#ccc}
 .ch-btn.active{background:var(--screen-bg);color:var(--phosphor);text-shadow:var(--text-glow)}
 .ch-btn .ch-num{display:block;font-family:'Press Start 2P',monospace;font-size:0.55rem;margin-bottom:0.3rem;opacity:0.5}
 
-/* ── QUOTE ── */
-.quote-section{margin-top:1.8rem;width:700px;max-width:95vw;animation:fadeUp 0.8s ease-out 0.8s both}
-.quote-box{
-  background:linear-gradient(135deg,rgba(30,30,32,0.9),rgba(20,20,22,0.95));
-  border:1px solid #2a2a2c;border-radius:12px;padding:1.4rem 1.8rem;position:relative;overflow:hidden;
-}
-.quote-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent)}
-.quote-label{font-family:'Press Start 2P',monospace;font-size:0.5rem;color:var(--amber);text-shadow:var(--amber-glow);letter-spacing:0.15em;margin-bottom:0.7rem;text-transform:uppercase}
-.quote-text{font-size:1.35rem;line-height:1.5;color:var(--cream);font-style:italic}
-.quote-author{margin-top:0.6rem;font-size:1rem;color:var(--amber);text-shadow:var(--amber-glow)}
-
 /* ── INFO BAR ── */
-.info-bar{margin-top:1.2rem;width:700px;max-width:95vw;display:flex;gap:1rem;animation:fadeUp 0.8s ease-out 1s both;flex-wrap:wrap}
+.info-bar{margin-top:1.4rem;width:700px;max-width:95vw;display:flex;gap:1rem;animation:fadeUp 0.8s ease-out 0.8s both;flex-wrap:wrap}
 .info-card{flex:1;min-width:140px;background:rgba(30,30,32,0.7);border:1px solid #2a2a2c;border-radius:8px;padding:1rem;text-align:center}
 .info-card .label{font-size:0.7rem;font-family:'Press Start 2P',monospace;color:var(--phosphor);text-shadow:0 0 6px rgba(51,255,51,0.3);letter-spacing:0.08em;margin-bottom:0.4rem}
 .info-card .value{font-size:1.3rem;color:var(--cream)}
+
+/* ── NEXT BROADCAST COUNTDOWN ── */
+.countdown-section{
+  margin-top:1.2rem;width:700px;max-width:95vw;
+  animation:fadeUp 0.8s ease-out 1s both;
+}
+.countdown-box{
+  background:linear-gradient(135deg,rgba(30,30,32,0.9),rgba(20,20,22,0.95));
+  border:1px solid #2a2a2c;border-radius:12px;padding:1.1rem 1.8rem;
+  position:relative;overflow:hidden;text-align:center;
+}
+.countdown-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent)}
+.countdown-label{font-family:'Press Start 2P',monospace;font-size:0.5rem;color:var(--amber);text-shadow:var(--amber-glow);letter-spacing:0.15em;margin-bottom:0.5rem;text-transform:uppercase}
+.countdown-time{font-size:2rem;color:var(--cream);letter-spacing:0.1em}
+.countdown-time .sep{color:var(--amber);animation:blink 1s step-end infinite}
 
 footer{margin-top:2rem;padding:1rem;text-align:center;color:#555;font-size:0.9rem}
 footer a{color:var(--amber);text-decoration:none}
@@ -184,6 +194,7 @@ footer a{color:var(--amber);text-decoration:none}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes static-flicker{0%{transform:translate(0,0)}25%{transform:translate(-1px,1px)}50%{transform:translate(1px,-1px)}75%{transform:translate(-1px,-1px)}100%{transform:translate(1px,0)}}
 @keyframes ch-flash{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+@keyframes blink{50%{opacity:0}}
 
 .screen.switching img{opacity:0!important;transition:none}
 .screen.switching .static-noise{opacity:0.6!important;transition:none}
@@ -203,6 +214,7 @@ footer a{color:var(--amber);text-decoration:none}
     box-shadow:0 15px 50px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.08),0 0 0 3px #0a0a0c,0 0 0 5px #3a3a3c;
   }
   .tv-body::before{display:none}
+  /* phone earpiece */
   .tv-body::after{
     content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);
     width:50px;height:4px;background:#333;border-radius:4px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.5);
@@ -213,28 +225,26 @@ footer a{color:var(--amber);text-decoration:none}
   .tv-brand{display:none}
   .knob{width:32px;height:32px}
   .channels-bar{margin-top:1.2rem;border-radius:6px}
-  .ch-btn{padding:0.6rem 0.3rem;font-size:1.05rem;min-width:0}
+  .ch-btn{padding:0.6rem 0.5rem;font-size:1.05rem;min-width:0}
   .ch-btn .ch-num{font-size:0.45rem}
-  .quote-section{max-width:95vw}
-  .quote-box{padding:1rem 1.2rem}
-  .quote-text{font-size:1.15rem}
   .info-bar{max-width:95vw;gap:0.5rem}
   .info-card{padding:0.7rem}
   .info-card .label{font-size:0.55rem}
   .info-card .value{font-size:1.1rem}
+  .countdown-section{max-width:95vw}
+  .countdown-box{padding:0.9rem 1.2rem}
+  .countdown-time{font-size:1.6rem}
 }
 @media(max-width:380px){
   .header h1{font-size:0.8rem}
-  .channels-bar{flex-wrap:wrap;border-radius:6px}
-  .ch-btn{flex:1 1 45%}
 }
 </style>
 </head>
 <body>
 <div class="page">
   <header class="header">
-    <h1>CHANNEL ZOO</h1>
-    <div class="tagline">Daily Animal Television</div>
+    <h1>ESQUISSE TV</h1>
+    <div class="tagline">Daily Emotional Manipulation</div>
   </header>
 
   <div class="tv-set">
@@ -249,13 +259,12 @@ footer a{color:var(--amber);text-decoration:none}
         </div>
       </div>
       <div class="tv-controls">
-        <div class="tv-brand">ChannelZoo&trade; 1987</div>
+        <div class="tv-brand">Esquisse&trade; 1987</div>
         <div class="controls-right">
           <div class="knob-group">
             <div class="knob" onclick="prevChannel()" title="Previous channel"><span>&#9664;</span></div>
             <div class="knob" onclick="nextChannel()" title="Next channel"><span>&#9654;</span></div>
           </div>
-          <div class="knob" onclick="loadAnimal()" title="Refresh"><span>&#8635;</span></div>
           <div class="power-led"></div>
         </div>
       </div>
@@ -267,143 +276,182 @@ footer a{color:var(--amber);text-decoration:none}
     <button class="ch-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="ch-num">CH 1</span>&#x1F431; CATS</button>
     <button class="ch-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="ch-num">CH 2</span>&#x1F438; FROGS</button>
     <button class="ch-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="ch-num">CH 3</span>&#x1F43B; BEARS</button>
-    <button class="ch-btn" data-channel="dog" onclick="switchChannel('dog',this)"><span class="ch-num">CH 4</span>&#x1F436; DOGS</button>
-  </div>
-
-  <div class="quote-section">
-    <div class="quote-box">
-      <div class="quote-label">&#x1F4E1; Daily Broadcast</div>
-      <div class="quote-text" id="quote-text">Loading transmission...</div>
-      <div class="quote-author" id="quote-author"></div>
-    </div>
   </div>
 
   <div class="info-bar">
     <div class="info-card"><div class="label">DATE</div><div class="value" id="info-date"></div></div>
     <div class="info-card"><div class="label">CHANNEL</div><div class="value" id="info-channel">CH 1 &#8212; CATS</div></div>
-    <div class="info-card"><div class="label">SIGNAL</div><div class="value" id="info-signal">&#x2588;&#x2588;&#x2588;&#x2588;&#x2592; 92%</div></div>
+    <div class="info-card"><div class="label">SIGNAL</div><div class="value" id="info-signal"></div></div>
   </div>
 
-  <footer>A retro broadcast from <a href="#">Channel Zoo</a> &bull; Images via open APIs</footer>
+  <div class="countdown-section">
+    <div class="countdown-box">
+      <div class="countdown-label">&#x1F4E1; Next Broadcast In</div>
+      <div class="countdown-time" id="countdown"></div>
+    </div>
+  </div>
+
+  <footer>A retro broadcast from <a href="#">Esquisse TV</a></footer>
 </div>
 
 <script>
-const channels=['cat','frog','bear','dog'];
-const channelNames={cat:'CATS',frog:'FROGS',bear:'BEARS',dog:'DOGS'};
-let currentChannel='cat';
+/* ═══════════════════════════════════════════
+   CONFIG
+   ═══════════════════════════════════════════ */
+const channels = ['cat','frog','bear'];
+const channelNames = {cat:'CATS',frog:'FROGS',bear:'BEARS'};
+let currentChannel = 'cat';
 
-const quotes=[
-  {text:"The only way to do great work is to love what you do.",author:"Steve Jobs"},
-  {text:"In the middle of difficulty lies opportunity.",author:"Albert Einstein"},
-  {text:"Believe you can and you're halfway there.",author:"Theodore Roosevelt"},
-  {text:"Every day is a new beginning. Take a deep breath and start again.",author:"Unknown"},
-  {text:"Happiness is not something ready made. It comes from your own actions.",author:"Dalai Lama"},
-  {text:"The best time to plant a tree was 20 years ago. The second best time is now.",author:"Chinese Proverb"},
-  {text:"You are never too old to set another goal or to dream a new dream.",author:"C.S. Lewis"},
-  {text:"Act as if what you do makes a difference. It does.",author:"William James"},
-  {text:"What lies behind us and what lies before us are tiny matters compared to what lies within us.",author:"Ralph Waldo Emerson"},
-  {text:"The future belongs to those who believe in the beauty of their dreams.",author:"Eleanor Roosevelt"},
-  {text:"It is during our darkest moments that we must focus to see the light.",author:"Aristotle"},
-  {text:"Keep your face always toward the sunshine and shadows will fall behind you.",author:"Walt Whitman"},
-  {text:"Wherever you go, go with all your heart.",author:"Confucius"},
-  {text:"Start where you are. Use what you have. Do what you can.",author:"Arthur Ashe"},
-  {text:"The secret of getting ahead is getting started.",author:"Mark Twain"},
-  {text:"Nothing is impossible. The word itself says I am possible.",author:"Audrey Hepburn"},
-  {text:"The only limit to our realization of tomorrow will be our doubts of today.",author:"Franklin D. Roosevelt"},
-  {text:"Do what you can, with what you have, where you are.",author:"Theodore Roosevelt"},
-  {text:"Hardships often prepare ordinary people for an extraordinary destiny.",author:"C.S. Lewis"},
-  {text:"Be yourself; everyone else is already taken.",author:"Oscar Wilde"},
-  {text:"Everything you have ever wanted is on the other side of fear.",author:"George Addair"},
-  {text:"Success is not final, failure is not fatal: it is the courage to continue that counts.",author:"Winston Churchill"},
-  {text:"Your time is limited, do not waste it living someone else's life.",author:"Steve Jobs"},
-  {text:"Turn your wounds into wisdom.",author:"Oprah Winfrey"},
-  {text:"If you want to lift yourself up, lift up someone else.",author:"Booker T. Washington"},
-  {text:"We may encounter many defeats but we must not be defeated.",author:"Maya Angelou"},
-  {text:"Spread love everywhere you go. Let no one ever come to you without leaving happier.",author:"Mother Teresa"},
-  {text:"The best revenge is massive success.",author:"Frank Sinatra"},
-  {text:"Life is ten percent what happens to you and ninety percent how you react to it.",author:"Charles Swindoll"},
-  {text:"An unexamined life is not worth living.",author:"Socrates"},
-  {text:"Courage is not the absence of fear but the triumph over it.",author:"Nelson Mandela"}
-];
+/* ═══════════════════════════════════════════
+   DAILY SEED — same image all day per channel
+   Uses day-of-year as a deterministic seed
+   ═══════════════════════════════════════════ */
+const today = new Date();
+const dayOfYear = Math.floor((today - new Date(today.getFullYear(),0,0)) / 86400000);
 
-const today=new Date();
-const dayOfYear=Math.floor((today-new Date(today.getFullYear(),0,0))/86400000);
-const dailyQuote=quotes[dayOfYear%quotes.length];
+document.getElementById('info-date').textContent =
+  today.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 
-document.getElementById('info-date').textContent=today.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-document.getElementById('quote-text').textContent='\u201C'+dailyQuote.text+'\u201D';
-document.getElementById('quote-author').textContent='\u2014 '+dailyQuote.author;
+const signals = ['\u2588\u2588\u2588\u2588\u2588 100%','\u2588\u2588\u2588\u2588\u2592 92%','\u2588\u2588\u2588\u2592\u2592 78%','\u2588\u2588\u2588\u2588\u2592 88%','\u2588\u2588\u2588\u2588\u2588 97%'];
+document.getElementById('info-signal').textContent = signals[dayOfYear % signals.length];
 
-const signals=['\u2588\u2588\u2588\u2588\u2588 100%','\u2588\u2588\u2588\u2588\u2592 92%','\u2588\u2588\u2588\u2592\u2592 78%','\u2588\u2588\u2588\u2588\u2592 88%','\u2588\u2588\u2588\u2588\u2588 97%'];
-document.getElementById('info-signal').textContent=signals[dayOfYear%signals.length];
+/* ═══════════════════════════════════════════
+   COUNTDOWN to midnight (next broadcast)
+   ═══════════════════════════════════════════ */
+function updateCountdown(){
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24,0,0,0);
+  const diff = midnight - now;
+  const h = String(Math.floor(diff/3600000)).padStart(2,'0');
+  const m = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+  const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+  document.getElementById('countdown').innerHTML =
+    h + '<span class="sep">:</span>' + m + '<span class="sep">:</span>' + s;
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
 
-async function loadAnimal(){
-  const img=document.getElementById('animal-img');
-  const loader=document.getElementById('loader');
-  loader.innerHTML='<span>TUNING...</span>';
-  img.classList.remove('loaded');
-  loader.classList.remove('hidden');
-  document.getElementById('static').style.opacity='0.4';
+/* ═══════════════════════════════════════════
+   DAILY IMAGE CACHE
+   Each channel stores its daily image in sessionStorage
+   keyed by channel+dayOfYear so it persists during the session
+   but resets each new day.
+   ═══════════════════════════════════════════ */
+function getCacheKey(ch){ return 'esquisse_'+ch+'_'+dayOfYear; }
 
-  let url='';
-  try{
-    if(currentChannel==='cat'){
-      const r=await fetch('https://api.thecatapi.com/v1/images/search?size=med');
-      const d=await r.json(); url=d[0].url;
-    }else if(currentChannel==='dog'){
-      const r=await fetch('https://dog.ceo/api/breeds/image/random');
-      const d=await r.json(); url=d.message;
-    }else if(currentChannel==='frog'){
-      const frogs=[
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Atelopus_zeteki1.jpg/800px-Atelopus_zeteki1.jpg',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Dendropsophus_microcephalus.jpg/800px-Dendropsophus_microcephalus.jpg',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Agalychnis_callidryas_%28red-eyed_tree_frog%29.jpg/800px-Agalychnis_callidryas_%28red-eyed_tree_frog%29.jpg',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Phyllobates_terribilis_%28Yellow%29.jpg/800px-Phyllobates_terribilis_%28Yellow%29.jpg',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bombina_variegata_2.jpg/800px-Bombina_variegata_2.jpg',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Rhacophorus_nigropalmatus.jpg/800px-Rhacophorus_nigropalmatus.jpg',
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Litoria_chloris_calling.jpg/800px-Litoria_chloris_calling.jpg'
-      ];
-      url=frogs[Math.floor(Math.random()*frogs.length)];
-    }else if(currentChannel==='bear'){
-      const w=600+Math.floor(Math.random()*200);
-      const h=400+Math.floor(Math.random()*200);
-      url='https://placebear.com/'+w+'/'+h;
-    }
-  }catch(e){loader.innerHTML='<span>NO SIGNAL</span>';return}
-
-  img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
-  img.onerror=()=>{loader.innerHTML='<span>WEAK SIGNAL</span>'};
-  img.src=url;
+function getCachedUrl(ch){
+  try{ return sessionStorage.getItem(getCacheKey(ch)); }catch(e){ return null; }
+}
+function setCachedUrl(ch, url){
+  try{ sessionStorage.setItem(getCacheKey(ch), url); }catch(e){}
 }
 
-function switchChannel(ch,btnEl){
-  if(ch===currentChannel)return;
-  currentChannel=ch;
+/* ═══════════════════════════════════════════
+   FETCH — one image per channel per day
+   ═══════════════════════════════════════════ */
+async function loadAnimal(){
+  const img = document.getElementById('animal-img');
+  const loader = document.getElementById('loader');
+  loader.innerHTML = '<span>TUNING...</span>';
+  img.classList.remove('loaded');
+  loader.classList.remove('hidden');
+  document.getElementById('static').style.opacity = '0.4';
+
+  // Check cache first
+  const cached = getCachedUrl(currentChannel);
+  if(cached){
+    img.onload = ()=>{ img.classList.add('loaded'); loader.classList.add('hidden'); };
+    img.onerror = ()=>{ loader.innerHTML='<span>WEAK SIGNAL</span>'; };
+    img.src = cached;
+    return;
+  }
+
+  let url = '';
+  try{
+    if(currentChannel === 'cat'){
+      const r = await fetch('https://api.thecatapi.com/v1/images/search?size=med');
+      const d = await r.json();
+      url = d[0].url;
+    } else if(currentChannel === 'frog'){
+      const frogs = [
+        'https://cdn.pixabay.com/photo/2016/11/11/15/29/frog-1817167_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/11/11/15/29/frog-1817170_1280.jpg',
+        'https://cdn.pixabay.com/photo/2014/07/25/08/56/frog-401231_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/11/29/01/34/frog-1866790_1280.jpg',
+        'https://cdn.pixabay.com/photo/2017/01/31/17/49/frog-2025610_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/11/29/01/10/adorable-1866624_1280.jpg',
+        'https://cdn.pixabay.com/photo/2014/07/25/08/56/frog-401232_1280.jpg',
+        'https://cdn.pixabay.com/photo/2015/12/28/08/04/frog-1111111_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/11/11/15/29/frog-1817169_1280.jpg',
+        'https://cdn.pixabay.com/photo/2017/10/19/20/41/frog-2868523_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/11/29/01/10/adorable-1866625_1280.jpg',
+        'https://cdn.pixabay.com/photo/2018/04/18/15/58/frog-3330327_1280.jpg',
+        'https://cdn.pixabay.com/photo/2017/11/28/15/29/frog-2984353_1280.jpg',
+        'https://cdn.pixabay.com/photo/2018/02/13/15/42/frog-3151168_1280.jpg',
+        'https://cdn.pixabay.com/photo/2018/08/24/22/58/frog-3629388_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/05/27/13/28/frog-1419813_1280.jpg',
+        'https://cdn.pixabay.com/photo/2014/08/11/21/24/frog-415970_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/03/28/12/35/frog-1285220_1280.jpg',
+        'https://cdn.pixabay.com/photo/2016/01/10/22/07/frog-1132505_1280.jpg',
+        'https://cdn.pixabay.com/photo/2018/05/17/18/15/frog-3409480_1280.jpg'
+      ];
+      url = frogs[dayOfYear % frogs.length];
+    } else if(currentChannel === 'bear'){
+      // Seed dimensions from day so it's the same bear all day
+      const w = 600 + (dayOfYear * 7 % 200);
+      const h = 400 + (dayOfYear * 13 % 200);
+      url = 'https://placebear.com/'+w+'/'+h;
+    }
+  }catch(e){
+    loader.innerHTML='<span>NO SIGNAL</span>';
+    return;
+  }
+
+  if(url) setCachedUrl(currentChannel, url);
+
+  img.onload = ()=>{ img.classList.add('loaded'); loader.classList.add('hidden'); };
+  img.onerror = ()=>{ loader.innerHTML='<span>WEAK SIGNAL</span>'; };
+  img.src = url;
+}
+
+/* ═══════════════════════════════════════════
+   CHANNEL SWITCHING
+   ═══════════════════════════════════════════ */
+function switchChannel(ch, btnEl){
+  if(ch === currentChannel) return;
+  currentChannel = ch;
   document.querySelectorAll('.ch-btn').forEach(b=>b.classList.remove('active'));
-  if(btnEl)btnEl.classList.add('active');
-  const chNum=channels.indexOf(ch)+1;
-  const indicator=document.getElementById('ch-indicator');
-  indicator.textContent='CH '+chNum;
+  if(btnEl) btnEl.classList.add('active');
+
+  const chNum = channels.indexOf(ch)+1;
+  const indicator = document.getElementById('ch-indicator');
+  indicator.textContent = 'CH '+chNum;
   indicator.classList.remove('show');
   void indicator.offsetWidth;
   indicator.classList.add('show');
-  document.getElementById('info-channel').textContent='CH '+chNum+' \u2014 '+channelNames[ch];
-  const screen=document.getElementById('screen');
+
+  document.getElementById('info-channel').textContent = 'CH '+chNum+' \u2014 '+channelNames[ch];
+
+  const screen = document.getElementById('screen');
   screen.classList.add('switching');
-  setTimeout(()=>{screen.classList.remove('switching');loadAnimal()},300);
+  setTimeout(()=>{ screen.classList.remove('switching'); loadAnimal(); }, 300);
 }
 
 function nextChannel(){
-  const i=channels.indexOf(currentChannel);
-  const next=channels[(i+1)%channels.length];
-  switchChannel(next,document.querySelector('[data-channel="'+next+'"]'));
+  const i = channels.indexOf(currentChannel);
+  const next = channels[(i+1)%channels.length];
+  switchChannel(next, document.querySelector('[data-channel="'+next+'"]'));
 }
 function prevChannel(){
-  const i=channels.indexOf(currentChannel);
-  const prev=channels[(i-1+channels.length)%channels.length];
-  switchChannel(prev,document.querySelector('[data-channel="'+prev+'"]'));
+  const i = channels.indexOf(currentChannel);
+  const prev = channels[(i-1+channels.length)%channels.length];
+  switchChannel(prev, document.querySelector('[data-channel="'+prev+'"]'));
 }
 
+/* ═══════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════ */
 loadAnimal();
 </script>
 </body>
