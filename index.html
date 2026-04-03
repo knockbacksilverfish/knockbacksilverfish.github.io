@@ -259,7 +259,7 @@ footer a{color:var(--amber);text-decoration:none}
         </div>
       </div>
       <div class="tv-controls">
-        <div class="tv-brand">Esquisse&trade; 1987</div>
+        <div class="tv-brand"></div>
         <div class="controls-right">
           <div class="knob-group">
             <div class="knob" onclick="prevChannel()" title="Previous channel"><span>&#9664;</span></div>
@@ -374,34 +374,29 @@ async function loadAnimal(){
       const d = await r.json();
       url = d[0].url;
     } else if(currentChannel === 'frog'){
-      const frogs = [
-        'https://cdn.pixabay.com/photo/2016/11/11/15/29/frog-1817167_1280.jpg',
-        'https://cdn.pixabay.com/photo/2016/11/11/15/29/frog-1817170_1280.jpg',
-        'https://cdn.pixabay.com/photo/2014/07/25/08/56/frog-401231_1280.jpg',
-        'https://cdn.pixabay.com/photo/2016/11/29/01/34/frog-1866790_1280.jpg',
-        'https://cdn.pixabay.com/photo/2017/01/31/17/49/frog-2025610_1280.jpg',
-        'https://cdn.pixabay.com/photo/2016/11/29/01/10/adorable-1866624_1280.jpg',
-        'https://cdn.pixabay.com/photo/2014/07/25/08/56/frog-401232_1280.jpg',
-        'https://cdn.pixabay.com/photo/2015/12/28/08/04/frog-1111111_1280.jpg',
-        'https://cdn.pixabay.com/photo/2016/11/11/15/29/frog-1817169_1280.jpg',
-        'https://cdn.pixabay.com/photo/2017/10/19/20/41/frog-2868523_1280.jpg',
-        'https://cdn.pixabay.com/photo/2016/11/29/01/10/adorable-1866625_1280.jpg',
-        'https://cdn.pixabay.com/photo/2018/04/18/15/58/frog-3330327_1280.jpg',
-        'https://cdn.pixabay.com/photo/2017/11/28/15/29/frog-2984353_1280.jpg',
-        'https://cdn.pixabay.com/photo/2018/02/13/15/42/frog-3151168_1280.jpg',
-        'https://cdn.pixabay.com/photo/2018/08/24/22/58/frog-3629388_1280.jpg',
-        'https://cdn.pixabay.com/photo/2016/05/27/13/28/frog-1419813_1280.jpg',
-        'https://cdn.pixabay.com/photo/2014/08/11/21/24/frog-415970_1280.jpg',
-        'https://cdn.pixabay.com/photo/2016/03/28/12/35/frog-1285220_1280.jpg',
-        'https://cdn.pixabay.com/photo/2016/01/10/22/07/frog-1132505_1280.jpg',
-        'https://cdn.pixabay.com/photo/2018/05/17/18/15/frog-3409480_1280.jpg'
-      ];
-      url = frogs[dayOfYear % frogs.length];
+      // Use Wikimedia Commons API to search for frog images — returns real, verified URLs
+      const apiUrl = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=frog+amphibian&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*';
+      const r = await fetch(apiUrl);
+      const d = await r.json();
+      const pages = d.query.pages;
+      const imgs = Object.values(pages)
+        .filter(p => p.imageinfo && p.imageinfo[0].thumburl)
+        .map(p => p.imageinfo[0].thumburl);
+      if(imgs.length > 0){
+        url = imgs[dayOfYear % imgs.length];
+      }
     } else if(currentChannel === 'bear'){
-      // Seed dimensions from day so it's the same bear all day
-      const w = 600 + (dayOfYear * 7 % 200);
-      const h = 400 + (dayOfYear * 13 % 200);
-      url = 'https://placebear.com/'+w+'/'+h;
+      // Use Wikimedia Commons API for bears too
+      const apiUrl = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=bear+ursidae&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*';
+      const r = await fetch(apiUrl);
+      const d = await r.json();
+      const pages = d.query.pages;
+      const imgs = Object.values(pages)
+        .filter(p => p.imageinfo && p.imageinfo[0].thumburl)
+        .map(p => p.imageinfo[0].thumburl);
+      if(imgs.length > 0){
+        url = imgs[dayOfYear % imgs.length];
+      }
     }
   }catch(e){
     loader.innerHTML='<span>NO SIGNAL</span>';
@@ -412,6 +407,7 @@ async function loadAnimal(){
 
   img.onload = ()=>{ img.classList.add('loaded'); loader.classList.add('hidden'); };
   img.onerror = ()=>{ loader.innerHTML='<span>WEAK SIGNAL</span>'; };
+  img.dataset.retried = '';
   img.src = url;
 }
 
