@@ -374,7 +374,6 @@ async function loadAnimal(){
       const d = await r.json();
       url = d[0].url;
     } else if(currentChannel === 'frog'){
-      // Use Wikimedia Commons API to search for frog images — returns real, verified URLs
       const apiUrl = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=frog+amphibian&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*';
       const r = await fetch(apiUrl);
       const d = await r.json();
