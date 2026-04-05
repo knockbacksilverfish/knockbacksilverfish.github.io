@@ -194,7 +194,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
           <div class="hud-bar"><span id="hud-left">FEED::ACTIVE</span><span id="hud-right">XENO-SAT III</span></div>
         </div>
         <div class="controls-row">
-          <div class="vessel-label">SPECIMEN VIEWER v2.0</div>
+          <div class="vessel-label">SPECIMEN VIEWER v3.7</div>
           <div class="nav-controls">
             <div class="nav-btn" onclick="prevChannel()">&#x25C0;</div>
             <div class="nav-btn" onclick="nextChannel()">&#x25B6;</div>
@@ -209,6 +209,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
     <button class="freq-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="freq-id">FREQ 01</span><span class="freq-name">&#x1F431; CATS</span></button>
     <button class="freq-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="freq-id">FREQ 02</span><span class="freq-name">&#x1F438; FROGS</span></button>
     <button class="freq-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="freq-id">FREQ 03</span><span class="freq-name">&#x1F43B; BEARS</span></button>
+    <button class="freq-btn" data-channel="memes" onclick="switchChannel('memes',this)"><span class="freq-id">FREQ 04</span><span class="freq-name">&#x1F921; MEMES</span></button>
   </div>
 
   <div class="readout">
@@ -228,9 +229,11 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
 </div>
 
 <script>
-const channels=['cat','frog','bear'];
-const channelNames={cat:'CATS',frog:'FROGS',bear:'BEARS'};
+const channels=['cat','frog','bear','memes'];
+const channelNames={cat:'CATS',frog:'FROGS',bear:'BEARS',memes:'MEMES'};
 let currentChannel='cat';
+
+const MEME_API = 'https://100.124.94.32/api';
 const today=new Date();
 const dayOfYear=Math.floor((today-new Date(today.getFullYear(),0,0))/86400000);
 document.getElementById('info-date').textContent=today.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
@@ -300,6 +303,11 @@ async function loadAnimal(){
     if(currentChannel==='cat'){const r=await fetch('https://api.thecatapi.com/v1/images/search?size=med');const d=await r.json();url=d[0].url}
     else if(currentChannel==='frog'){const imgs=await fetchWikimediaImages('frog amphibian photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
     else if(currentChannel==='bear'){const imgs=await fetchWikimediaImages('bear ursidae photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
+    else if(currentChannel==='memes'){
+      const r=await fetch(MEME_API+'/daily');
+      const d=await r.json();
+      if(d.url) url=d.url;
+    }
   }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
   setCachedUrl(currentChannel,url);
