@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meme Upload — Daily Specimen Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --void:#06080c;
+  --panel:#0d1520;
+  --glow-cyan:#00f0ff;
+  --glow-green:#00ff88;
+  --glow-red:#ff3344;
+  --text:#c0dce8;
+  --muted:#3a5060;
+  --border:rgba(0,240,255,0.12);
+  --cyan-glow:0 0 8px rgba(0,240,255,0.4),0 0 20px rgba(0,240,255,0.15);
+  --green-glow:0 0 8px rgba(0,255,136,0.4),0 0 20px rgba(0,255,136,0.15);
+}
+html{height:100%}
+body{
+  background:var(--void);
+  font-family:'Share Tech Mono',monospace;
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(0,240,255,0.04) 0%,transparent 60%),
+    radial-gradient(ellipse at 50% 100%,rgba(0,255,136,0.03) 0%,transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 15v22L30 52 0 37V15z' fill='none' stroke='rgba(0,240,255,0.04)' stroke-width='0.5'/%3E%3C/svg%3E");
+}
+body::after{
+  content:'';position:fixed;top:0;left:0;right:0;height:2px;z-index:9998;
+  background:linear-gradient(90deg,transparent,rgba(0,240,255,0.3),transparent);
+  animation:scanSweep 4s linear infinite;pointer-events:none;
+}
+@keyframes scanSweep{0%{top:0}100%{top:100vh}}
+@keyframes phaseIn{0%{opacity:0;transform:translateY(-15px);filter:blur(4px)}100%{opacity:1;transform:translateY(0);filter:blur(0)}}
+@keyframes materialize{0%{opacity:0;transform:scale(0.97)}100%{opacity:1;transform:scale(1)}}
+@keyframes pulse-border{0%,100%{opacity:0.6}50%{opacity:1}}
+@keyframes border-breathe{0%,100%{opacity:0.4}50%{opacity:0.7}}
+
+.page{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:2rem 1rem}
+
+.header{text-align:center;margin-bottom:1.8rem;animation:phaseIn 1.2s ease-out}
+.classification{
+  display:inline-block;padding:0.2rem 0.8rem;
+  border:1px solid var(--glow-red);color:var(--glow-red);
+  font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;
+  letter-spacing:0.3em;text-transform:uppercase;margin-bottom:0.8rem;
+  animation:pulse-border 2s ease-in-out infinite;
+}
+.header h1{
+  font-family:'Orbitron',monospace;font-weight:900;font-size:1.5rem;
+  color:var(--glow-cyan);text-shadow:var(--cyan-glow);letter-spacing:0.12em;line-height:1.3;
+}
+.header .tagline{
+  font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:400;
+  color:var(--glow-green);text-shadow:var(--green-glow);
+  margin-top:0.4rem;letter-spacing:0.15em;text-transform:uppercase;
+}
+
+.hull-wrap{position:relative;width:620px;max-width:95vw;animation:materialize 1s ease-out 0.2s both}
+.hull{
+  background:linear-gradient(160deg,#111820,#0a0f16 40%,#080c12);
+  border-radius:4px;padding:3px;position:relative;
+  clip-path:polygon(3% 0%,97% 0%,100% 3%,100% 97%,97% 100%,3% 100%,0% 97%,0% 3%);
+}
+.hull::before{
+  content:'';position:absolute;inset:-1px;z-index:-1;
+  background:linear-gradient(135deg,var(--glow-cyan),transparent 30%,transparent 70%,var(--glow-green));
+  clip-path:polygon(3% 0%,97% 0%,100% 3%,100% 97%,97% 100%,3% 100%,0% 97%,0% 3%);
+  opacity:0.5;animation:border-breathe 3s ease-in-out infinite;
+}
+.inner-panel{
+  background:var(--panel);padding:24px;
+  clip-path:polygon(2% 0%,98% 0%,100% 2%,100% 98%,98% 100%,2% 100%,0% 98%,0% 2%);
+}
+
+.corner-tl,.corner-tr,.corner-bl,.corner-br{position:absolute;width:20px;height:20px;z-index:5}
+.corner-tl{top:-1px;left:-1px;border-top:2px solid var(--glow-cyan);border-left:2px solid var(--glow-cyan)}
+.corner-tr{top:-1px;right:-1px;border-top:2px solid var(--glow-cyan);border-right:2px solid var(--glow-cyan)}
+.corner-bl{bottom:-1px;left:-1px;border-bottom:2px solid var(--glow-green);border-left:2px solid var(--glow-green)}
+.corner-br{bottom:-1px;right:-1px;border-bottom:2px solid var(--glow-green);border-right:2px solid var(--glow-green)}
+
+.upload-zone{
+  border:1px dashed var(--border);border-radius:4px;
+  padding:2.5rem 1.5rem;text-align:center;cursor:pointer;
+  transition:all 0.3s ease;background:rgba(0,240,255,0.02);
+}
+.upload-zone:hover,.upload-zone.dragover{
+  border-color:var(--glow-cyan);background:rgba(0,240,255,0.05);
+  box-shadow:inset 0 0 30px rgba(0,240,255,0.03);
+}
+.upload-zone .icon{font-size:2.5rem;margin-bottom:0.8rem;display:block}
+.upload-zone .label{
+  font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:600;
+  color:var(--glow-cyan);letter-spacing:0.05em;
+}
+.upload-zone .hint{font-size:0.85rem;color:var(--muted);margin-top:0.3rem}
+.upload-zone input{display:none}
+
+.preview-area{margin-top:1.2rem;display:none}
+.preview-area.show{display:block}
+.preview-img{width:100%;max-height:350px;object-fit:contain;border:1px solid var(--border);background:#000}
+.preview-name{margin-top:0.4rem;font-size:0.85rem;color:var(--muted);text-align:center}
+
+.field{margin-top:1rem}
+.field label{
+  display:block;font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;
+  color:var(--glow-cyan);text-shadow:0 0 6px rgba(0,240,255,0.3);
+  letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.4rem;
+}
+.field input{
+  width:100%;padding:0.65rem 0.8rem;
+  border:1px solid var(--border);background:rgba(0,240,255,0.03);
+  color:var(--text);font-family:'Share Tech Mono',monospace;font-size:1rem;
+  letter-spacing:0.05em;
+}
+.field input:focus{outline:none;border-color:var(--glow-cyan);box-shadow:0 0 10px rgba(0,240,255,0.1)}
+
+.btn{
+  display:block;width:100%;margin-top:1.2rem;
+  padding:0.85rem;border:1px solid var(--glow-green);
+  background:rgba(0,255,136,0.08);
+  font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;
+  color:var(--glow-green);cursor:pointer;
+  text-transform:uppercase;letter-spacing:0.15em;
+  transition:all 0.25s ease;
+  clip-path:polygon(2% 0%,98% 0%,100% 15%,100% 85%,98% 100%,2% 100%,0% 85%,0% 15%);
+}
+.btn:hover{background:rgba(0,255,136,0.15);box-shadow:0 0 20px rgba(0,255,136,0.15),inset 0 0 15px rgba(0,255,136,0.05)}
+.btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none}
+
+.status{margin-top:1rem;padding:0.7rem 0.8rem;font-size:0.9rem;text-align:center;display:none;border:1px solid transparent}
+.status.show{display:block}
+.status.success{border-color:var(--glow-green);color:var(--glow-green);background:rgba(0,255,136,0.05)}
+.status.error{border-color:var(--glow-red);color:var(--glow-red);background:rgba(255,51,68,0.05)}
+
+.divider{margin:2rem 0 1.2rem;border:none;border-top:1px solid var(--border)}
+
+.section-label{
+  font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;
+  color:var(--glow-cyan);text-shadow:0 0 6px rgba(0,240,255,0.3);
+  text-align:center;letter-spacing:0.2em;margin-bottom:1rem;
+}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.6rem}
+.gallery img{
+  width:100%;aspect-ratio:1;object-fit:cover;
+  border:1px solid var(--border);background:#000;transition:all 0.2s;cursor:pointer;
+}
+.gallery img:hover{border-color:var(--glow-cyan);box-shadow:0 0 12px rgba(0,240,255,0.1)}
+.gallery-empty{text-align:center;color:var(--muted);font-size:0.9rem;padding:1.5rem}
+
+.back-link{
+  display:inline-flex;align-items:center;gap:0.5rem;margin-top:2rem;
+  font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:600;
+  color:var(--glow-cyan);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;
+}
+.back-link:hover{text-shadow:var(--cyan-glow)}
+
+footer{
+  margin-top:2rem;text-align:center;
+  font-family:'Orbitron',monospace;font-size:0.45rem;font-weight:700;
+  color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;
+}
+
+@media(max-width:640px){
+  .header h1{font-size:1rem}
+  .inner-panel{padding:16px}
+  .upload-zone{padding:1.8rem 1rem}
+  .gallery{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+}
+@media(max-width:380px){.header h1{font-size:0.85rem}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="classification">&#x25C8; UPLOAD TERMINAL — AUTHORIZED PERSONNEL &#x25C8;</div>
+    <h1>MEME UPLOAD</h1>
+    <div class="tagline">Submit specimens for broadcast</div>
+  </header>
+
+  <div class="hull-wrap">
+    <div class="hull">
+      <div class="corner-tl"></div><div class="corner-tr"></div>
+      <div class="corner-bl"></div><div class="corner-br"></div>
+      <div class="inner-panel">
+
+        <div class="upload-zone" id="dropzone">
+          <span class="icon">&#x1F4E1;</span>
+          <div class="label">Drop specimen here</div>
+          <div class="hint">or click to browse — JPG, PNG, GIF, WebP (max 10MB)</div>
+          <input type="file" id="fileInput" accept="image/*" />
+        </div>
+
+        <div class="preview-area" id="preview-area">
+          <img class="preview-img" id="preview-img" />
+          <div class="preview-name" id="preview-name"></div>
+        </div>
+
+        <div class="field">
+          <label>Authorization Code</label>
+          <input type="password" id="password" placeholder="Enter upload password" />
+        </div>
+
+        <button class="btn" id="uploadBtn" disabled>&#x25B2; TRANSMIT SPECIMEN</button>
+        <div class="status" id="status"></div>
+
+        <div class="divider"></div>
+
+        <div class="section-label">&#x25C8; UPLOADED SPECIMENS &#x25C8;</div>
+        <div class="gallery" id="gallery"></div>
+        <div class="gallery-empty" id="gallery-empty">Scanning archive...</div>
+
+      </div>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">&#x25C0; Return to Specimen Viewer</a>
+  <footer>DAILY SPECIMEN VIEWER &middot; UPLOAD TERMINAL &middot; RESTRICTED ACCESS</footer>
+
+</div>
+
+<script>
+const MEME_API = 'https://84.235.174.32/api';
+const BASE_URL = MEME_API.replace('/api','');
+
+const dropzone=document.getElementById('dropzone'),fileInput=document.getElementById('fileInput');
+const previewArea=document.getElementById('preview-area'),previewImg=document.getElementById('preview-img');
+const previewName=document.getElementById('preview-name'),uploadBtn=document.getElementById('uploadBtn');
+const statusEl=document.getElementById('status'),gallery=document.getElementById('gallery');
+const galleryEmpty=document.getElementById('gallery-empty'),passwordField=document.getElementById('password');
+let selectedFile=null;
+
+dropzone.addEventListener('click',()=>fileInput.click());
+dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.classList.add('dragover')});
+dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop',e=>{e.preventDefault();dropzone.classList.remove('dragover');if(e.dataTransfer.files.length)handleFile(e.dataTransfer.files[0])});
+fileInput.addEventListener('change',()=>{if(fileInput.files.length)handleFile(fileInput.files[0])});
+
+function handleFile(f){
+  if(f.size>10*1024*1024){showStatus('Specimen too large — 10MB max','error');return}
+  selectedFile=f;
+  previewImg.src=URL.createObjectURL(f);
+  previewName.textContent=f.name+' ('+(f.size/1024).toFixed(0)+' KB)';
+  previewArea.classList.add('show');
+  uploadBtn.disabled=false;
+  statusEl.classList.remove('show');
+}
+
+uploadBtn.addEventListener('click',async()=>{
+  if(!selectedFile)return;
+  if(!passwordField.value){showStatus('Authorization code required','error');return}
+  uploadBtn.disabled=true;uploadBtn.textContent='TRANSMITTING...';
+  const fd=new FormData();
+  fd.append('meme',selectedFile);
+  fd.append('password',passwordField.value);
+  try{
+    const res=await fetch(MEME_API+'/upload',{method:'POST',body:fd});
+    const data=await res.json();
+    if(data.success){
+      showStatus('Specimen transmitted. It may appear as the daily broadcast.','success');
+      selectedFile=null;previewArea.classList.remove('show');fileInput.value='';
+      loadGallery();
+    } else showStatus(data.error||'Transmission failed','error');
+  }catch(e){showStatus('Transmission failed — check connection','error')}
+  uploadBtn.disabled=false;uploadBtn.innerHTML='&#x25B2; TRANSMIT SPECIMEN';
+});
+
+function showStatus(msg,type){statusEl.textContent=msg;statusEl.className='status show '+type}
+
+async function loadGallery(){
+  try{
+    const res=await fetch(MEME_API+'/memes');
+    const data=await res.json();
+    if(data.memes.length===0){galleryEmpty.textContent='No specimens uploaded yet.';gallery.innerHTML='';return}
+    galleryEmpty.style.display='none';
+    gallery.innerHTML=data.memes.map(u=>'<img src="'+BASE_URL+u+'" alt="Specimen" loading="lazy"/>').join('');
+  }catch(e){galleryEmpty.textContent='Archive unavailable'}
+}
+loadGallery();
+</script>
+</body>
+</html>
+
