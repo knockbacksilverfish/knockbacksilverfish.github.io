@@ -69,10 +69,10 @@ async function clearRateLimit(env, ip) {
   await env.RATE_LIMIT.delete(`rl:${ip}`);
 }
 
-async function dailyCat(env, corsHeaders, workerUrl) {
-  const list = await env.BUCKET.list({ prefix: 'cats/' });
-  const objects = list.objects.filter(o => o.key !== 'cats/' && !o.key.endsWith('/'));
-  if (!objects.length) return json({ error: 'No cats found' }, 404, corsHeaders);
+async function dailyFromBucket(env, corsHeaders, workerUrl, prefix) {
+  const list = await env.BUCKET.list({ prefix });
+  const objects = list.objects.filter(o => o.key !== prefix && !o.key.endsWith('/'));
+  if (!objects.length) return json({ error: `No images found in ${prefix}` }, 404, corsHeaders);
   const idx = dayOfYear() % objects.length;
   return json({ url: `${workerUrl}/img/${objects[idx].key}` }, 200, corsHeaders);
 }
@@ -161,7 +161,8 @@ export default {
 
       if (request.method === 'OPTIONS') return new Response(null, { headers: c });
 
-      if (pathname === '/daily-cat' && request.method === 'GET') return dailyCat(env, c, workerUrl);
+      if (pathname === '/daily-cat' && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'cats/');
+      if (pathname === '/daily-bear' && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'bears/');
       if (pathname === '/daily-meme' && request.method === 'GET') return dailyMeme(env, c, workerUrl);
       if (pathname.startsWith('/img/') && request.method === 'GET') return serveImage(env, pathname.slice(5), c);
       if (pathname === '/memes' && request.method === 'GET') return listMemes(env, c, workerUrl);
