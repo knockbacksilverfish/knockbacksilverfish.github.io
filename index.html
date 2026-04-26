@@ -328,7 +328,7 @@ async function loadAnimal(){
   try{
     if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat');const d=await r.json();if(d.url)url=d.url}
     else if(currentChannel==='frog'){const imgs=await fetchWikimediaImages('frog amphibian photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
-    else if(currentChannel==='bear'){const imgs=await fetchWikimediaImages('bear ursidae photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
+    else if(currentChannel==='bear'){const r=await fetch(WORKER_URL+'/daily-bear');const d=await r.json();if(d.url)url=d.url}
     else if(currentChannel==='memes'){
       const r=await fetch(WORKER_URL+'/daily-meme');
       const d=await r.json();
