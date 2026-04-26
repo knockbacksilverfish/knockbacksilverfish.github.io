@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Specimen Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --void:#06080c;
+  --panel:#0d1520;
+  --glow-cyan:#00f0ff;
+  --glow-green:#00ff88;
+  --glow-red:#ff3344;
+  --text:#c0dce8;
+  --muted:#3a5060;
+  --border:rgba(0,240,255,0.12);
+  --cyan-glow:0 0 8px rgba(0,240,255,0.4),0 0 20px rgba(0,240,255,0.15);
+  --green-glow:0 0 8px rgba(0,255,136,0.4),0 0 20px rgba(0,255,136,0.15);
+}
+html{height:100%}
+body{
+  background:var(--void);
+  font-family:'Share Tech Mono',monospace;
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(0,240,255,0.04) 0%,transparent 60%),
+    radial-gradient(ellipse at 50% 100%,rgba(0,255,136,0.03) 0%,transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 15v22L30 52 0 37V15z' fill='none' stroke='rgba(0,240,255,0.04)' stroke-width='0.5'/%3E%3C/svg%3E");
+}
+body::after{
+  content:'';position:fixed;top:0;left:0;right:0;height:2px;z-index:9998;
+  background:linear-gradient(90deg,transparent,rgba(0,240,255,0.3),transparent);
+  animation:scanSweep 4s linear infinite;pointer-events:none;
+}
+@keyframes scanSweep{0%{top:0}100%{top:100vh}}
+
+.page{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:2rem 1rem}
+
+.header{text-align:center;margin-bottom:1.8rem;animation:phaseIn 1.2s ease-out}
+.classification{
+  display:inline-block;padding:0.2rem 0.8rem;
+  border:1px solid var(--glow-red);color:var(--glow-red);
+  font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;
+  letter-spacing:0.3em;text-transform:uppercase;margin-bottom:0.8rem;
+  animation:pulse-border 2s ease-in-out infinite;
+}
+.header h1{
+  font-family:'Orbitron',monospace;font-weight:900;font-size:1.8rem;
+  color:var(--glow-cyan);text-shadow:var(--cyan-glow);letter-spacing:0.12em;line-height:1.3;
+}
+.header .tagline{
+  font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:400;
+  color:var(--glow-green);text-shadow:var(--green-glow);
+  margin-top:0.4rem;letter-spacing:0.15em;text-transform:uppercase;
+}
+
+.vessel{position:relative;width:720px;max-width:95vw;animation:materialize 1s ease-out 0.2s both}
+.hull{
+  background:linear-gradient(160deg,#111820,#0a0f16 40%,#080c12);
+  border-radius:4px;padding:3px;position:relative;
+  clip-path:polygon(3% 0%,97% 0%,100% 3%,100% 97%,97% 100%,3% 100%,0% 97%,0% 3%);
+}
+.hull::before{
+  content:'';position:absolute;inset:-1px;z-index:-1;
+  background:linear-gradient(135deg,var(--glow-cyan),transparent 30%,transparent 70%,var(--glow-green));
+  clip-path:polygon(3% 0%,97% 0%,100% 3%,100% 97%,97% 100%,3% 100%,0% 97%,0% 3%);
+  opacity:0.5;animation:border-breathe 3s ease-in-out infinite;
+}
+.inner-panel{
+  background:var(--panel);padding:16px;
+  clip-path:polygon(2% 0%,98% 0%,100% 2%,100% 98%,98% 100%,2% 100%,0% 98%,0% 2%);
+}
+.corner-tl,.corner-tr,.corner-bl,.corner-br{position:absolute;width:20px;height:20px;z-index:5}
+.corner-tl{top:8px;left:8px;border-top:2px solid var(--glow-cyan);border-left:2px solid var(--glow-cyan)}
+.corner-tr{top:8px;right:8px;border-top:2px solid var(--glow-cyan);border-right:2px solid var(--glow-cyan)}
+.corner-bl{bottom:8px;left:8px;border-bottom:2px solid var(--glow-green);border-left:2px solid var(--glow-green)}
+.corner-br{bottom:8px;right:8px;border-bottom:2px solid var(--glow-green);border-right:2px solid var(--glow-green)}
+
+.viewport{position:relative;background:#040608;aspect-ratio:16/10;overflow:hidden;border:1px solid var(--border)}
+.viewport::before{content:'';position:absolute;inset:0;z-index:5;pointer-events:none;border:1px solid rgba(0,240,255,0.06);box-shadow:inset 0 0 40px rgba(0,0,0,0.5)}
+.viewport::after{content:'';position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 4px)}
+.viewport img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.6s ease;filter:brightness(1.02) saturate(0.95)}
+.viewport img.loaded{opacity:1}
+.viewport .loader{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--glow-cyan);font-size:1rem;font-family:'Orbitron',monospace;font-weight:400;text-shadow:var(--cyan-glow);letter-spacing:0.2em}
+.viewport .loader.hidden{display:none}
+.spinner-ring{width:40px;height:40px;margin-bottom:1rem;border:2px solid rgba(0,240,255,0.1);border-top:2px solid var(--glow-cyan);border-radius:50%;animation:spin 1s linear infinite;box-shadow:var(--cyan-glow)}
+.ch-overlay{position:absolute;top:12px;right:16px;z-index:10;font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--glow-cyan);text-shadow:var(--cyan-glow);opacity:0;pointer-events:none;letter-spacing:0.15em}
+.ch-overlay.show{animation:ch-flash 2s ease-out forwards}
+.hud-bar{position:absolute;bottom:0;left:0;right:0;z-index:8;padding:6px 12px;background:linear-gradient(0deg,rgba(0,0,0,0.7),transparent);display:flex;justify-content:space-between;align-items:center;font-size:0.65rem;color:rgba(0,240,255,0.5);letter-spacing:0.1em;pointer-events:none}
+
+.controls-row{display:flex;align-items:center;justify-content:space-between;padding:12px 4px 4px}
+.vessel-label{font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase}
+.nav-controls{display:flex;align-items:center;gap:12px}
+.nav-btn{
+  width:32px;height:32px;background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.15);
+  color:var(--glow-cyan);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:0.9rem;transition:all 0.2s ease;
+  clip-path:polygon(15% 0%,85% 0%,100% 15%,100% 85%,85% 100%,15% 100%,0% 85%,0% 15%);
+}
+.nav-btn:hover{background:rgba(0,240,255,0.12);box-shadow:var(--cyan-glow)}
+.nav-btn:active{transform:scale(0.9)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--glow-green);box-shadow:var(--green-glow);animation:pulse-dot 2s ease-in-out infinite}
+
+.freq-bar{display:flex;gap:2px;margin-top:1.5rem;animation:fadeUp 0.8s ease-out 0.5s both;width:720px;max-width:95vw}
+.freq-btn{
+  flex:1;padding:0.7rem 0.5rem;font-family:'Share Tech Mono',monospace;font-size:1rem;
+  border:1px solid rgba(0,240,255,0.08);background:rgba(0,240,255,0.02);color:var(--muted);
+  cursor:pointer;transition:all 0.25s ease;
+  clip-path:polygon(4% 0%,96% 0%,100% 20%,100% 80%,96% 100%,4% 100%,0% 80%,0% 20%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.25rem;
+}
+.freq-btn:hover{background:rgba(0,240,255,0.06);color:var(--text);border-color:rgba(0,240,255,0.2)}
+.freq-btn.active{background:rgba(0,240,255,0.08);color:var(--glow-cyan);border-color:rgba(0,240,255,0.3);text-shadow:var(--cyan-glow);box-shadow:inset 0 0 20px rgba(0,240,255,0.05)}
+.freq-btn .freq-id{font-family:'Orbitron',monospace;font-size:0.45rem;font-weight:700;opacity:0.4;letter-spacing:0.2em}
+.freq-btn .freq-name{font-size:1.05rem;letter-spacing:0.08em}
+
+.readout{margin-top:1.2rem;width:720px;max-width:95vw;display:flex;gap:2px;animation:fadeUp 0.8s ease-out 0.7s both}
+.readout-cell{flex:1;background:rgba(0,240,255,0.02);border:1px solid rgba(0,240,255,0.06);padding:0.8rem 0.6rem;text-align:center;clip-path:polygon(3% 0%,97% 0%,100% 15%,100% 85%,97% 100%,3% 100%,0% 85%,0% 15%)}
+.readout-cell .r-label{font-family:'Orbitron',monospace;font-size:0.45rem;font-weight:700;color:var(--glow-cyan);text-shadow:0 0 6px rgba(0,240,255,0.3);letter-spacing:0.15em;margin-bottom:0.3rem}
+.readout-cell .r-value{font-size:1.1rem;color:var(--text)}
+
+.countdown-section{margin-top:1rem;width:720px;max-width:95vw;animation:fadeUp 0.8s ease-out 0.9s both}
+.countdown-box{
+  background:rgba(0,255,136,0.02);border:1px solid rgba(0,255,136,0.1);
+  padding:1rem 1.5rem;text-align:center;position:relative;
+  clip-path:polygon(2% 0%,98% 0%,100% 25%,100% 75%,98% 100%,2% 100%,0% 75%,0% 25%);
+}
+.countdown-box::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--glow-green),transparent)}
+.cd-label{font-family:'Orbitron',monospace;font-size:0.45rem;font-weight:700;color:var(--glow-green);text-shadow:var(--green-glow);letter-spacing:0.2em;margin-bottom:0.4rem}
+.cd-time{font-family:'Orbitron',monospace;font-size:1.8rem;font-weight:400;color:var(--text);letter-spacing:0.1em}
+.cd-time .sep{color:var(--glow-green);animation:blink 1s step-end infinite}
+
+.upload-link{
+  display:inline-flex;align-items:center;gap:0.6rem;
+  margin-top:1.2rem;padding:0.7rem 1.8rem;
+  border:1px solid var(--glow-green);background:rgba(0,255,136,0.04);
+  color:var(--glow-green);text-decoration:none;
+  font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;
+  letter-spacing:0.15em;text-transform:uppercase;
+  clip-path:polygon(3% 0%,97% 0%,100% 20%,100% 80%,97% 100%,3% 100%,0% 80%,0% 20%);
+  transition:all 0.25s ease;animation:fadeUp 0.8s ease-out 1.1s both;
+}
+.upload-link:hover{
+  background:rgba(0,255,136,0.1);
+  box-shadow:0 0 20px rgba(0,255,136,0.15),inset 0 0 15px rgba(0,255,136,0.03);
+  text-shadow:var(--green-glow);
+}
+.upload-link-icon{font-size:0.8rem}
+
+footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-size:0.75rem;letter-spacing:0.1em}
+
+@keyframes phaseIn{0%{opacity:0;transform:translateY(-15px);filter:blur(4px)}100%{opacity:1;transform:translateY(0);filter:blur(0)}}
+@keyframes materialize{0%{opacity:0;transform:scale(0.95);filter:brightness(2) blur(2px)}50%{opacity:1;filter:brightness(1.3) blur(0)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{50%{opacity:0}}
+@keyframes ch-flash{0%{opacity:1}75%{opacity:1}100%{opacity:0}}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes pulse-border{0%,100%{opacity:0.8}50%{opacity:0.4}}
+@keyframes border-breathe{0%,100%{opacity:0.4}50%{opacity:0.7}}
+.viewport.switching img{opacity:0!important;transition:none}
+
+@media(max-width:640px){
+  .page{padding:1rem 0.5rem}
+  .header h1{font-size:1.1rem}
+  .header .tagline{font-size:0.8rem}
+  .classification{font-size:0.45rem}
+  .vessel{width:98vw}
+  .inner-panel{padding:8px}
+  .viewport{aspect-ratio:3/4}
+  .controls-row{padding:8px 2px 2px}
+  .vessel-label{display:none}
+  .freq-bar{margin-top:1rem}
+  .freq-btn{padding:0.55rem 0.3rem}
+  .freq-btn .freq-id{font-size:0.4rem}
+  .freq-btn .freq-name{font-size:0.9rem}
+  .readout{gap:2px}
+  .readout-cell{padding:0.6rem 0.3rem}
+  .readout-cell .r-label{font-size:0.4rem}
+  .readout-cell .r-value{font-size:0.95rem}
+  .countdown-box{padding:0.8rem 1rem}
+  .cd-time{font-size:1.4rem}
+  .hud-bar{font-size:0.55rem;padding:4px 8px}
+}
+@media(max-width:380px){.header h1{font-size:0.9rem}.freq-btn .freq-name{font-size:0.8rem}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="header">
+    <div class="classification">&#x25C8; CLASSIFIED — LEVEL 7 CLEARANCE &#x25C8;</div>
+    <h1>DAILY SPECIMEN VIEWER</h1>
+  </header>
+
+  <div class="vessel">
+    <div class="hull">
+      <div class="corner-tl"></div><div class="corner-tr"></div>
+      <div class="corner-bl"></div><div class="corner-br"></div>
+      <div class="inner-panel">
+        <div class="viewport" id="screen">
+          <img id="animal-img" alt="Transmission feed" />
+          <div class="loader" id="loader"><div class="spinner-ring"></div><span>ACQUIRING SIGNAL...</span></div>
+          <div class="ch-overlay" id="ch-indicator">FREQ 01</div>
+          <div class="hud-bar"><span id="hud-left">FEED::ACTIVE</span><span id="hud-right">XENO-SAT III</span></div>
+        </div>
+        <div class="controls-row">
+          <div class="vessel-label">SPECIMEN VIEWER v3.7</div>
+          <div class="nav-controls">
+            <div class="nav-btn" onclick="prevChannel()">&#x25C0;</div>
+            <div class="nav-btn" onclick="nextChannel()">&#x25B6;</div>
+            <div class="status-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="freq-bar">
+    <button class="freq-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="freq-id">FREQ 01</span><span class="freq-name">&#x1F431; CATS</span></button>
+    <button class="freq-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="freq-id">FREQ 02</span><span class="freq-name">&#x1F438; FROGS</span></button>
+    <button class="freq-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="freq-id">FREQ 03</span><span class="freq-name">&#x1F43B; BEARS</span></button>
+    <button class="freq-btn" data-channel="memes" onclick="switchChannel('memes',this)"><span class="freq-id">FREQ 04</span><span class="freq-name">&#x1F921; MEMES</span></button>
+  </div>
+
+  <div class="readout">
+    <div class="readout-cell"><div class="r-label">EARTH DATE</div><div class="r-value" id="info-date"></div></div>
+    <div class="readout-cell"><div class="r-label">FREQUENCY</div><div class="r-value" id="info-channel">FREQ 01 — CATS</div></div>
+    <div class="readout-cell"><div class="r-label">SIGNAL</div><div class="r-value" id="info-signal"></div></div>
+  </div>
+
+  <div class="countdown-section">
+    <div class="countdown-box">
+      <div class="cd-label">&#x25C8; NEXT TRANSMISSION IN</div>
+      <div class="cd-time" id="countdown"></div>
+    </div>
+  </div>
+
+  <a class="upload-link" id="upload-link" href="#" target="_blank">
+    <span class="upload-link-icon">&#x25B2;</span>
+    <span>TRANSMIT MEME</span>
+  </a>
+
+  <footer>DAILY SPECIMEN VIEWER &middot; INTERCEPTED SIGNAL &middot; DO NOT DISTRIBUTE</footer>
+</div>
+
+<script>
+const channels=['cat','frog','bear','memes'];
+const channelNames={cat:'CATS',frog:'FROGS',bear:'BEARS',memes:'MEMES'};
+let currentChannel='cat';
+
+// After deploying your worker, replace this with your worker URL
+// Format:   https://specimen-worker.daily-ratelimit.workers.dev
+const WORKER_URL = '  https://specimen-worker.daily-ratelimit.workers.dev';
+document.getElementById('upload-link').href = 'upload.html';
+
+const today=new Date();
+const dayOfYear=Math.floor((today-new Date(today.getFullYear(),0,0))/86400000);
+document.getElementById('info-date').textContent=today.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+/* Real signal strength via Network Information API */
+function updateSignal(){
+  const el = document.getElementById('info-signal');
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if(conn){
+    const type = conn.effectiveType || conn.type || 'unknown';
+    const downlink = conn.downlink; // Mbps
+    let bars = 0, pct = 0;
+    if(type === '4g' || downlink >= 10){ bars = 5; pct = 100; }
+    else if(type === '3g' || downlink >= 2){ bars = 4; pct = 85; }
+    else if(type === '2g' || downlink >= 0.5){ bars = 3; pct = 60; }
+    else if(type === 'slow-2g' || downlink > 0){ bars = 2; pct = 35; }
+    else { bars = 1; pct = 10; }
+    const filled = '\u2588'.repeat(bars);
+    const empty = '\u2592'.repeat(5 - bars);
+    el.textContent = filled + empty + ' ' + pct + '%';
+    // Update on change
+    conn.onchange = updateSignal;
+  } else {
+    // Fallback: if API unavailable, check if online
+    if(navigator.onLine){
+      el.textContent = '\u2588\u2588\u2588\u2588\u2592 ~85%';
+    } else {
+      el.textContent = '\u2592\u2592\u2592\u2592\u2592 0%';
+    }
+    window.addEventListener('online', updateSignal);
+    window.addEventListener('offline', updateSignal);
+  }
+}
+updateSignal();
+
+function updateCountdown(){
+  const now=new Date(),midnight=new Date(now);midnight.setHours(24,0,0,0);
+  const diff=midnight-now;
+  const h=String(Math.floor(diff/3600000)).padStart(2,'0');
+  const m=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+  const s=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+  document.getElementById('countdown').innerHTML=h+'<span class="sep">:</span>'+m+'<span class="sep">:</span>'+s;
+}
+updateCountdown();setInterval(updateCountdown,1000);
+
+function getCacheKey(ch){return 'esquisse_'+ch+'_'+dayOfYear}
+function getCachedUrl(ch){try{return localStorage.getItem(getCacheKey(ch))}catch(e){return null}}
+function setCachedUrl(ch,url){
+  try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith('esquisse_'+ch+'_')&&k!==getCacheKey(ch))localStorage.removeItem(k)}
+  localStorage.setItem(getCacheKey(ch),url)}catch(e){}
+}
+
+async function fetchWikimediaImages(q){
+  const u='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent(q)+'&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*';
+  const r=await fetch(u);const d=await r.json();
+  if(!d.query||!d.query.pages)return[];
+  return Object.values(d.query.pages).filter(p=>p.imageinfo&&p.imageinfo[0]&&p.imageinfo[0].thumburl).map(p=>p.imageinfo[0].thumburl);
+}
+
+async function loadAnimal(){
+  const img=document.getElementById('animal-img'),loader=document.getElementById('loader');
+  loader.querySelector('span').textContent='ACQUIRING SIGNAL...';
+  img.classList.remove('loaded');loader.classList.remove('hidden');
+  const cached=getCachedUrl(currentChannel);
+  if(cached){img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};img.src=cached;return}
+  let url='';
+  try{
+    if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat');const d=await r.json();if(d.url)url=d.url}
+    else if(currentChannel==='frog'){const imgs=await fetchWikimediaImages('frog amphibian photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
+    else if(currentChannel==='bear'){const imgs=await fetchWikimediaImages('bear ursidae photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
+    else if(currentChannel==='memes'){
+      const r=await fetch(WORKER_URL+'/daily-meme');
+      const d=await r.json();
+      if(d.url) url=d.url;
+    }
+  }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
+  if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
+  setCachedUrl(currentChannel,url);
+  img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
+  img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};
+  img.src=url;
+}
+
+function switchChannel(ch,btnEl){
+  if(ch===currentChannel)return;currentChannel=ch;
+  document.querySelectorAll('.freq-btn').forEach(b=>b.classList.remove('active'));
+  if(btnEl)btnEl.classList.add('active');
+  const n=channels.indexOf(ch)+1;
+  const ind=document.getElementById('ch-indicator');
+  ind.textContent='FREQ 0'+n;ind.classList.remove('show');void ind.offsetWidth;ind.classList.add('show');
+  document.getElementById('info-channel').textContent='FREQ 0'+n+' \u2014 '+channelNames[ch];
+  const scr=document.getElementById('screen');
+  scr.classList.add('switching');setTimeout(()=>{scr.classList.remove('switching');loadAnimal()},250);
+}
+function nextChannel(){const i=channels.indexOf(currentChannel);const n=channels[(i+1)%channels.length];switchChannel(n,document.querySelector('[data-channel="'+n+'"]'))}
+function prevChannel(){const i=channels.indexOf(currentChannel);const p=channels[(i-1+channels.length)%channels.length];switchChannel(p,document.querySelector('[data-channel="'+p+'"]'))}
+loadAnimal();
+</script>
+</body>
+</html>
+
