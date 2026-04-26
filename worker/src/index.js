@@ -153,20 +153,29 @@ async function listMemes(env, corsHeaders, workerUrl) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const { pathname } = url;
-    const workerUrl = `${url.protocol}//${url.host}`;
     const origin = request.headers.get('Origin') || '';
-    const ip = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
     const c = cors(env, origin);
 
-    if (request.method === 'OPTIONS') return new Response(null, { headers: c });
+    // Always return CORS headers even on crash — browser must see them
+    try {
+      const { pathname } = url;
+      const workerUrl = `${url.protocol}//${url.host}`;
+      const ip = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
 
-    if (pathname === '/daily-cat' && request.method === 'GET') return dailyCat(env, c);
-    if (pathname === '/daily-meme' && request.method === 'GET') return dailyMeme(env, c);
-    if (pathname.startsWith('/img/') && request.method === 'GET') return serveImage(env, pathname.slice(5), c);
-    if (pathname === '/memes' && request.method === 'GET') return listMemes(env, c, workerUrl);
-    if (pathname === '/upload' && request.method === 'POST') return upload(request, env, c, ip);
+      if (request.method === 'OPTIONS') return new Response(null, { headers: c });
 
-    return new Response('Not found', { status: 404 });
+      if (pathname === '/daily-cat' && request.method === 'GET') return dailyCat(env, c);
+      if (pathname === '/daily-meme' && request.method === 'GET') return dailyMeme(env, c);
+      if (pathname.startsWith('/img/') && request.method === 'GET') return serveImage(env, pathname.slice(5), c);
+      if (pathname === '/memes' && request.method === 'GET') return listMemes(env, c, workerUrl);
+      if (pathname === '/upload' && request.method === 'POST') return upload(request, env, c, ip);
+
+      return new Response('Not found', { status: 404, headers: c });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: 'Internal error', detail: e.message }), {
+        status: 500,
+        headers: { ...c, 'Content-Type': 'application/json' },
+      });
+    }
   },
 };
