@@ -289,7 +289,7 @@ uploadBtn.addEventListener('click',async()=>{
       selectedFile=null;previewArea.classList.remove('show');fileInput.value='';
       loadGallery();
     } else showStatus(data.error||'Transmission failed','error');
-  }catch(e){showStatus('Transmission failed — '+e.message,'error')}
+  }catch(e){console.error('Upload error:',e,e.name,e.message);showStatus('Transmission failed — '+e.name+': '+e.message,'error')}
   uploadBtn.disabled=false;uploadBtn.innerHTML='&#x25B2; TRANSMIT SPECIMEN';
 });
 
