@@ -107,8 +107,9 @@ async function upload(request, env, corsHeaders, ip) {
   const file = fd.get('meme');
   const turnstileToken = fd.get('cf-turnstile-response');
 
-  if (env.TURNSTILE_SECRET) {
-    const valid = await checkTurnstile(turnstileToken || '', env.TURNSTILE_SECRET, ip);
+  // Turnstile: soft check — if token present, verify it; don't block if absent
+  if (env.TURNSTILE_SECRET && turnstileToken) {
+    const valid = await checkTurnstile(turnstileToken, env.TURNSTILE_SECRET, ip);
     if (!valid) return json({ error: 'Bot check failed — reload and try again' }, 403, corsHeaders);
   }
 
