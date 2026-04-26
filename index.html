@@ -322,7 +322,7 @@ async function loadAnimal(){
   const img=document.getElementById('animal-img'),loader=document.getElementById('loader');
   loader.querySelector('span').textContent='ACQUIRING SIGNAL...';
   img.classList.remove('loaded');loader.classList.remove('hidden');
-  const cached=getCachedUrl(currentChannel);
+  const cached=currentChannel!=='memes'?getCachedUrl(currentChannel):null;
   if(cached){img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};img.src=cached;return}
   let url='';
   try{
@@ -336,7 +336,7 @@ async function loadAnimal(){
     }
   }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
-  setCachedUrl(currentChannel,url);
+  if(currentChannel!=='memes')setCachedUrl(currentChannel,url);
   img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
   img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};
   img.src=url;
