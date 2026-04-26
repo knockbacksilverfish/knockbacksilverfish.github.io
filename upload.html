@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meme Upload — Daily Specimen Viewer</title>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -211,6 +212,7 @@ footer{
           <input type="password" id="password" placeholder="Enter upload password" />
         </div>
 
+        <div class="cf-turnstile" data-sitekey="TURNSTILE_SITE_KEY_PLACEHOLDER" data-theme="dark" style="margin-top:1rem"></div>
         <button class="btn" id="uploadBtn" disabled>&#x25B2; TRANSMIT SPECIMEN</button>
         <div class="status" id="status"></div>
 
@@ -230,8 +232,8 @@ footer{
 </div>
 
 <script>
-const MEME_API = 'https://dailysoren.duckdns.org/api';
-const BASE_URL = MEME_API.replace('/api','');
+// After deploying your worker, replace this with your worker URL
+const WORKER_URL = 'https://specimen-worker.YOURNAME.workers.dev';
 
 const dropzone=document.getElementById('dropzone'),fileInput=document.getElementById('fileInput');
 const previewArea=document.getElementById('preview-area'),previewImg=document.getElementById('preview-img');
@@ -263,8 +265,10 @@ uploadBtn.addEventListener('click',async()=>{
   const fd=new FormData();
   fd.append('meme',selectedFile);
   fd.append('password',passwordField.value);
+  const turnstileInput=document.querySelector('[name="cf-turnstile-response"]');
+  if(turnstileInput)fd.append('cf-turnstile-response',turnstileInput.value);
   try{
-    const res=await fetch(MEME_API+'/upload',{method:'POST',body:fd});
+    const res=await fetch(WORKER_URL+'/upload',{method:'POST',body:fd});
     const data=await res.json();
     if(data.success){
       showStatus('Specimen transmitted. It may appear as the daily broadcast.','success');
@@ -279,11 +283,11 @@ function showStatus(msg,type){statusEl.textContent=msg;statusEl.className='statu
 
 async function loadGallery(){
   try{
-    const res=await fetch(MEME_API+'/memes');
+    const res=await fetch(WORKER_URL+'/memes');
     const data=await res.json();
     if(data.memes.length===0){galleryEmpty.textContent='No specimens uploaded yet.';gallery.innerHTML='';return}
     galleryEmpty.style.display='none';
-    gallery.innerHTML=data.memes.map(u=>'<img src="'+BASE_URL+u+'" alt="Specimen" loading="lazy"/>').join('');
+    gallery.innerHTML=data.memes.map(u=>'<img src="'+u+'" alt="Specimen" loading="lazy"/>').join('');
   }catch(e){galleryEmpty.textContent='Archive unavailable'}
 }
 loadGallery();

@@ -255,8 +255,9 @@ const channels=['cat','frog','bear','memes'];
 const channelNames={cat:'CATS',frog:'FROGS',bear:'BEARS',memes:'MEMES'};
 let currentChannel='cat';
 
-const MEME_API = 'https://dailysoren.duckdns.org/api';
-// Set upload button link to local page
+// After deploying your worker, replace this with your worker URL
+// Format: https://specimen-worker.YOURNAME.workers.dev
+const WORKER_URL = 'https://specimen-worker.YOURNAME.workers.dev';
 document.getElementById('upload-link').href = 'upload.html';
 
 const today=new Date();
@@ -325,13 +326,13 @@ async function loadAnimal(){
   if(cached){img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};img.src=cached;return}
   let url='';
   try{
-    if(currentChannel==='cat'){const r=await fetch('https://api.thecatapi.com/v1/images/search?size=med');const d=await r.json();url=d[0].url}
+    if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat');const d=await r.json();if(d.url)url=d.url}
     else if(currentChannel==='frog'){const imgs=await fetchWikimediaImages('frog amphibian photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
     else if(currentChannel==='bear'){const imgs=await fetchWikimediaImages('bear ursidae photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
     else if(currentChannel==='memes'){
-      const r=await fetch(MEME_API+'/daily');
+      const r=await fetch(WORKER_URL+'/daily-meme');
       const d=await r.json();
-      if(d.url) url=MEME_API.replace('/api','')+d.url;
+      if(d.url) url=d.url;
     }
   }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}

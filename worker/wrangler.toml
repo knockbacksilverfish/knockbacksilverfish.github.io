@@ -1,0 +1,11 @@
+name = "specimen-worker"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "specimen-storage"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "bca506b815da4c12a9d243e8e3db8ef9"
