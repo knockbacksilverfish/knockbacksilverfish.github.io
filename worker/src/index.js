@@ -1,8 +1,6 @@
-function cors(env, requestOrigin) {
-  const allowed = env.ALLOWED_ORIGIN || '*';
-  const origin = allowed === '*' ? '*' : (requestOrigin === allowed ? requestOrigin : null);
+function cors(env) {
   return {
-    'Access-Control-Allow-Origin': origin || '',
+    'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN || '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Vary': 'Origin',
@@ -153,8 +151,7 @@ async function listMemes(env, corsHeaders, workerUrl) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const origin = request.headers.get('Origin') || '';
-    const c = cors(env, origin);
+    const c = cors(env);
 
     // Always return CORS headers even on crash — browser must see them
     try {
