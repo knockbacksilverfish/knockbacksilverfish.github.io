@@ -83,7 +83,10 @@ body::after{
 .corner-bl{bottom:8px;left:8px;border-bottom:2px solid var(--glow-green);border-left:2px solid var(--glow-green)}
 .corner-br{bottom:8px;right:8px;border-bottom:2px solid var(--glow-green);border-right:2px solid var(--glow-green)}
 
-.viewport{position:relative;background:#040608;aspect-ratio:16/10;overflow:hidden;border:1px solid var(--border)}
+.viewport{position:relative;background:#040608;aspect-ratio:16/10;overflow:hidden;border:1px solid var(--border);cursor:zoom-in}
+.viewport:fullscreen,.viewport:-webkit-full-screen{width:100vw;height:100vh;aspect-ratio:unset;cursor:zoom-out}
+.caption-overlay{position:absolute;bottom:28px;left:0;right:0;z-index:7;padding:0.5rem 1.2rem;background:linear-gradient(0deg,rgba(0,0,0,0.75),transparent);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.85rem;text-align:center;pointer-events:none;display:none;letter-spacing:0.05em}
+.caption-overlay.show{display:block}
 .viewport::before{content:'';position:absolute;inset:0;z-index:5;pointer-events:none;border:1px solid rgba(0,240,255,0.06);box-shadow:inset 0 0 40px rgba(0,0,0,0.5)}
 .viewport::after{content:'';position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 4px)}
 .viewport img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.6s ease;filter:brightness(1.02) saturate(0.95)}
@@ -208,6 +211,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
           <img id="animal-img" alt="Transmission feed" />
           <div class="loader" id="loader"><div class="spinner-ring"></div><span>ACQUIRING SIGNAL...</span></div>
           <div class="ch-overlay" id="ch-indicator">FREQ 01</div>
+          <div class="caption-overlay" id="caption-overlay"></div>
           <div class="hud-bar"><span id="hud-left">FEED::ACTIVE</span><span id="hud-right">XENO-SAT III</span></div>
         </div>
         <div class="controls-row">
@@ -215,6 +219,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
           <div class="nav-controls">
             <div class="nav-btn" onclick="prevChannel()">&#x25C0;</div>
             <div class="nav-btn" onclick="nextChannel()">&#x25B6;</div>
+            <div class="nav-btn" onclick="downloadImage()" title="Download specimen">&#x2B07;</div>
             <div class="status-dot"></div>
           </div>
         </div>
@@ -318,10 +323,41 @@ async function fetchWikimediaImages(q){
   return Object.values(d.query.pages).filter(p=>p.imageinfo&&p.imageinfo[0]&&p.imageinfo[0].thumburl).map(p=>p.imageinfo[0].thumburl);
 }
 
+function setCaption(text){
+  const el=document.getElementById('caption-overlay');
+  if(text){el.textContent=text;el.classList.add('show')}
+  else{el.textContent='';el.classList.remove('show')}
+}
+
+async function downloadImage(){
+  const img=document.getElementById('animal-img');
+  if(!img.src||!img.classList.contains('loaded'))return;
+  try{
+    const res=await fetch(img.src);
+    const blob=await res.blob();
+    const ext=blob.type.split('/')[1]||'jpg';
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=currentChannel+'-specimen.'+ext;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }catch(e){}
+}
+
+document.getElementById('screen').addEventListener('click',function(e){
+  if(e.target.closest('.nav-btn'))return;
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    (this.requestFullscreen||this.webkitRequestFullscreen).call(this).catch(()=>{});
+  }else{
+    (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+  }
+});
+
 async function loadAnimal(){
   const img=document.getElementById('animal-img'),loader=document.getElementById('loader');
   loader.querySelector('span').textContent='ACQUIRING SIGNAL...';
   img.classList.remove('loaded');loader.classList.remove('hidden');
+  setCaption('');
   const cached=currentChannel!=='memes'?getCachedUrl(currentChannel):null;
   if(cached){img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};img.src=cached;return}
   let url='';
@@ -332,7 +368,8 @@ async function loadAnimal(){
     else if(currentChannel==='memes'){
       const r=await fetch(WORKER_URL+'/daily-meme');
       const d=await r.json();
-      if(d.url) url=d.url;
+      if(d.url)url=d.url;
+      if(d.caption)setCaption(d.caption);
     }
   }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}

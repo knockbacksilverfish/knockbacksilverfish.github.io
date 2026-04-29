@@ -238,6 +238,10 @@ footer{
           </div>
         </div>
 
+        <div class="field">
+          <label>Caption <span style="opacity:0.4;font-family:'Share Tech Mono',monospace;font-size:0.7rem;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <input type="text" id="caption" placeholder="Add a caption..." maxlength="120" autocomplete="off" />
+        </div>
         <div class="cf-turnstile" data-sitekey="TURNSTILE_SITE_KEY_PLACEHOLDER" data-theme="dark" style="margin-top:1rem"></div>
         <button class="btn" id="uploadBtn" disabled>&#x25B2; TRANSMIT SPECIMEN</button>
         <div class="status" id="status"></div>
@@ -291,6 +295,7 @@ uploadBtn.addEventListener('click',async()=>{
   const fd=new FormData();
   fd.append('meme',selectedFile);
   fd.append('password',passwordField.value);
+  fd.append('caption',document.getElementById('caption').value||'');
   const turnstileInput=document.querySelector('[name="cf-turnstile-response"]');
   if(turnstileInput)fd.append('cf-turnstile-response',turnstileInput.value);
   try{
@@ -298,7 +303,7 @@ uploadBtn.addEventListener('click',async()=>{
     const data=await res.json();
     if(data.success){
       showStatus('Specimen transmitted — select it below to set as today\'s broadcast.','success');
-      selectedFile=null;previewArea.classList.remove('show');fileInput.value='';
+      selectedFile=null;previewArea.classList.remove('show');fileInput.value='';document.getElementById('caption').value='';
       loadGallery();
     } else showStatus(data.error||'Transmission failed','error');
   }catch(e){console.error('Upload error:',e,e.name,e.message);showStatus('Transmission failed — '+e.name+': '+e.message,'error')}
@@ -340,9 +345,11 @@ async function loadGallery(){
     galleryEmpty.style.display='none';
     gallery.innerHTML=data.memes.map(m=>{
       const sel=m.key===data.selectedKey;
+      const cap=m.caption?'<div style="font-size:0.75rem;color:var(--muted);text-align:center;padding:0 0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+m.caption.replace(/"/g,'&quot;')+'">'+m.caption+'</div>':'';
       return '<div class="gallery-card'+(sel?' selected':'')+'">'+
         '<img src="'+m.url+'" alt="Specimen" loading="lazy"/>'+
         '<div class="selected-badge">&#x25C8; TODAY\'S BROADCAST &#x25C8;</div>'+
+        cap+
         '<button class="select-btn" onclick="selectMeme(\''+m.key.replace(/'/g,"\\'")+'\')">'+(sel?'BROADCASTING':'SET TODAY')+'</button>'+
         '</div>';
     }).join('');
