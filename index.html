@@ -140,21 +140,25 @@ body::after{
 .cd-time{font-family:'Orbitron',monospace;font-size:1.8rem;font-weight:400;color:var(--text);letter-spacing:0.1em}
 .cd-time .sep{color:var(--glow-green);animation:blink 1s step-end infinite}
 
-.upload-link{
+.btn-row{display:flex;gap:0.6rem;margin-top:1.2rem;flex-wrap:wrap;justify-content:center;animation:fadeUp 0.8s ease-out 1.1s both}
+.upload-link,.download-btn{
   display:inline-flex;align-items:center;gap:0.6rem;
-  margin-top:1.2rem;padding:0.7rem 1.8rem;
-  border:1px solid var(--glow-green);background:rgba(0,255,136,0.04);
-  color:var(--glow-green);text-decoration:none;
+  padding:0.7rem 1.8rem;
   font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;
   letter-spacing:0.15em;text-transform:uppercase;
   clip-path:polygon(3% 0%,97% 0%,100% 20%,100% 80%,97% 100%,3% 100%,0% 80%,0% 20%);
-  transition:all 0.25s ease;animation:fadeUp 0.8s ease-out 1.1s both;
+  transition:all 0.25s ease;cursor:pointer;
 }
-.upload-link:hover{
-  background:rgba(0,255,136,0.1);
-  box-shadow:0 0 20px rgba(0,255,136,0.15),inset 0 0 15px rgba(0,255,136,0.03);
-  text-shadow:var(--green-glow);
+.upload-link{
+  border:1px solid var(--glow-green);background:rgba(0,255,136,0.04);
+  color:var(--glow-green);text-decoration:none;
 }
+.upload-link:hover{background:rgba(0,255,136,0.1);box-shadow:0 0 20px rgba(0,255,136,0.15),inset 0 0 15px rgba(0,255,136,0.03);text-shadow:var(--green-glow)}
+.download-btn{
+  border:1px solid rgba(0,240,255,0.3);background:rgba(0,240,255,0.04);
+  color:var(--glow-cyan);
+}
+.download-btn:hover{background:rgba(0,240,255,0.1);box-shadow:var(--cyan-glow);text-shadow:var(--cyan-glow)}
 .upload-link-icon{font-size:0.8rem}
 
 footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-size:0.75rem;letter-spacing:0.1em}
@@ -219,7 +223,6 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
           <div class="nav-controls">
             <div class="nav-btn" onclick="prevChannel()">&#x25C0;</div>
             <div class="nav-btn" onclick="nextChannel()">&#x25B6;</div>
-            <div class="nav-btn" onclick="downloadImage()" title="Download specimen">&#x2B07;</div>
             <div class="status-dot"></div>
           </div>
         </div>
@@ -231,7 +234,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
     <button class="freq-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="freq-id">FREQ 01</span><span class="freq-name">&#x1F431; CATS</span></button>
     <button class="freq-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="freq-id">FREQ 02</span><span class="freq-name">&#x1F438; FROGS</span></button>
     <button class="freq-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="freq-id">FREQ 03</span><span class="freq-name">&#x1F43B; BEARS</span></button>
-    <button class="freq-btn" data-channel="memes" onclick="switchChannel('memes',this)"><span class="freq-id">FREQ 04</span><span class="freq-name">&#x1F921; MEMES</span></button>
+    <button class="freq-btn" data-channel="memes" onclick="switchChannel('memes',this)"><span class="freq-id">FREQ 04</span><span class="freq-name">&#x1F5BC; MEMES</span></button>
   </div>
 
   <div class="readout">
@@ -247,10 +250,16 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
     </div>
   </div>
 
-  <a class="upload-link" id="upload-link" href="#" target="_blank">
-    <span class="upload-link-icon">&#x25B2;</span>
-    <span>TRANSMIT MEME</span>
-  </a>
+  <div class="btn-row">
+    <a class="upload-link" id="upload-link" href="#" target="_blank">
+      <span class="upload-link-icon">&#x25B2;</span>
+      <span>TRANSMIT MEME</span>
+    </a>
+    <button class="download-btn" onclick="downloadImage()">
+      <span>&#x2B07;</span>
+      <span>DOWNLOAD SPECIMEN</span>
+    </button>
+  </div>
 
   <footer>DAILY SPECIMEN VIEWER &middot; INTERCEPTED SIGNAL &middot; DO NOT DISTRIBUTE</footer>
 </div>
