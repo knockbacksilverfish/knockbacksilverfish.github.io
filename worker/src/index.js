@@ -164,6 +164,24 @@ async function selectMeme(request, env, corsHeaders, ip) {
   return json({ success: true }, 200, corsHeaders);
 }
 
+const VALID_CHANNELS = ['cat','frog','bear','memes'];
+
+async function react(request, env, corsHeaders) {
+  const { channel, delta = 1 } = await request.json();
+  if (!VALID_CHANNELS.includes(channel)) return json({ error: 'Invalid channel' }, 400, corsHeaders);
+  const key = `reactions:${channel}:${todayStr()}`;
+  const count = Math.max(0, parseInt(await env.RATE_LIMIT.get(key) || '0') + delta);
+  await env.RATE_LIMIT.put(key, String(count), { expirationTtl: 172800 });
+  return json({ count }, 200, corsHeaders);
+}
+
+async function getReactions(url, env, corsHeaders) {
+  const channel = url.searchParams.get('channel') || '';
+  if (!VALID_CHANNELS.includes(channel)) return json({ count: 0 }, 200, corsHeaders);
+  const count = parseInt(await env.RATE_LIMIT.get(`reactions:${channel}:${todayStr()}`) || '0');
+  return json({ count }, 200, corsHeaders);
+}
+
 async function listMemes(env, corsHeaders, workerUrl) {
   const list = await env.BUCKET.list({ prefix: 'memes/uploads/' });
   const selectedKey = await env.RATE_LIMIT.get('memes:selected');
@@ -192,9 +210,11 @@ export default {
       if (pathname === '/daily-bear' && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'bears/');
       if (pathname === '/daily-meme' && request.method === 'GET') return dailyMeme(env, c, workerUrl);
       if (pathname.startsWith('/img/') && request.method === 'GET') return serveImage(env, pathname.slice(5), c);
-      if (pathname === '/memes'  && request.method === 'GET')  return listMemes(env, c, workerUrl);
-      if (pathname === '/upload' && request.method === 'POST') return upload(request, env, c, ip);
-      if (pathname === '/select' && request.method === 'POST') return selectMeme(request, env, c, ip);
+      if (pathname === '/memes'     && request.method === 'GET')  return listMemes(env, c, workerUrl);
+      if (pathname === '/upload'    && request.method === 'POST') return upload(request, env, c, ip);
+      if (pathname === '/select'    && request.method === 'POST') return selectMeme(request, env, c, ip);
+      if (pathname === '/react'     && request.method === 'POST') return react(request, env, c);
+      if (pathname === '/reactions' && request.method === 'GET')  return getReactions(url, env, c);
 
       return new Response('Not found', { status: 404, headers: c });
     } catch (e) {

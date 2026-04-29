@@ -240,7 +240,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
   <div class="readout">
     <div class="readout-cell"><div class="r-label">EARTH DATE</div><div class="r-value" id="info-date"></div></div>
     <div class="readout-cell"><div class="r-label">FREQUENCY</div><div class="r-value" id="info-channel">FREQ 01 — CATS</div></div>
-    <div class="readout-cell"><div class="r-label">SIGNAL</div><div class="r-value" id="info-signal"></div></div>
+    <div class="readout-cell" id="like-cell" onclick="react()" title="Like this specimen" style="cursor:pointer;transition:all 0.3s"><div class="r-label" id="like-label">&#x2661; LIKES</div><div class="r-value" id="info-witnesses">—</div></div>
   </div>
 
   <div class="countdown-section">
@@ -277,36 +277,63 @@ document.getElementById('upload-link').href = 'upload.html';
 const today=new Date();
 const dayOfYear=Math.floor((today-new Date(today.getFullYear(),0,0))/86400000);
 document.getElementById('info-date').textContent=today.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-/* Real signal strength via Network Information API */
-function updateSignal(){
-  const el = document.getElementById('info-signal');
-  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if(conn){
-    const type = conn.effectiveType || conn.type || 'unknown';
-    const downlink = conn.downlink; // Mbps
-    let bars = 0, pct = 0;
-    if(type === '4g' || downlink >= 10){ bars = 5; pct = 100; }
-    else if(type === '3g' || downlink >= 2){ bars = 4; pct = 85; }
-    else if(type === '2g' || downlink >= 0.5){ bars = 3; pct = 60; }
-    else if(type === 'slow-2g' || downlink > 0){ bars = 2; pct = 35; }
-    else { bars = 1; pct = 10; }
-    const filled = '\u2588'.repeat(bars);
-    const empty = '\u2592'.repeat(5 - bars);
-    el.textContent = filled + empty + ' ' + pct + '%';
-    // Update on change
-    conn.onchange = updateSignal;
-  } else {
-    // Fallback: if API unavailable, check if online
-    if(navigator.onLine){
-      el.textContent = '\u2588\u2588\u2588\u2588\u2592 ~85%';
-    } else {
-      el.textContent = '\u2592\u2592\u2592\u2592\u2592 0%';
-    }
-    window.addEventListener('online', updateSignal);
-    window.addEventListener('offline', updateSignal);
+/* Codename generator \u2014 deterministic per channel per day */
+const CN_ADJ=['SHADOW','PHANTOM','CRIMSON','VOID','STATIC','CHROME','BINARY','SILENT','GHOST','NEON','ROGUE','DELTA','SIGMA','SOLAR','LUNAR','ZERO','IRON','AMBER','COBALT','OBSIDIAN'];
+const CN_NOUN=['POUNCE','WHISKER','SPECIMEN','VECTOR','UNIT','CIPHER','PULSE','PROWL','FANG','BEAM','DRIFT','FLUX','SHARD','PRISM','APEX','CLAW','ECHO','NODE','BOLT','VEIL'];
+function seededInt(s,max){return Math.abs((s*1664525+1013904223)&0x7fffffff)%max}
+function getCodename(ch){
+  const b=dayOfYear*100+channels.indexOf(ch);
+  return CN_ADJ[seededInt(b,CN_ADJ.length)]+'-'+CN_NOUN[seededInt(b+50000,CN_NOUN.length)]+'-'+(seededInt(b+99999,9)+1);
+}
+
+/* Reactions */
+function likeKey(ch){return'liked_'+ch+'_'+dayOfYear}
+function isLiked(ch){try{return!!localStorage.getItem(likeKey(ch))}catch(e){return false}}
+function setLiked(ch){try{localStorage.setItem(likeKey(ch),'1')}catch(e){}}
+function unsetLiked(ch){try{localStorage.removeItem(likeKey(ch))}catch(e){}}
+
+function updateLikeUI(liked){
+  const cell=document.getElementById('like-cell');
+  const label=document.getElementById('like-label');
+  if(liked){
+    label.textContent='♥ LIKED';
+    cell.style.borderColor='rgba(255,60,100,0.4)';
+    cell.style.background='rgba(255,60,100,0.06)';
+    cell.style.color='#ff3c64';
+  }else{
+    label.innerHTML='&#x2661; LIKES';
+    cell.style.borderColor='';
+    cell.style.background='';
+    cell.style.color='';
   }
 }
-updateSignal();
+
+async function fetchReactions(){
+  try{
+    const r=await fetch(WORKER_URL+'/reactions?channel='+currentChannel);
+    const d=await r.json();
+    document.getElementById('info-witnesses').textContent=d.count;
+    updateLikeUI(isLiked(currentChannel));
+  }catch(e){}
+}
+
+async function react(){
+  const liked=isLiked(currentChannel);
+  // Optimistic UI
+  const countEl=document.getElementById('info-witnesses');
+  const current=parseInt(countEl.textContent)||0;
+  if(liked){unsetLiked(currentChannel);updateLikeUI(false);countEl.textContent=Math.max(0,current-1);}
+  else{setLiked(currentChannel);updateLikeUI(true);countEl.textContent=current+1;}
+  try{
+    const r=await fetch(WORKER_URL+'/react',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({channel:currentChannel,delta:liked?-1:1})
+    });
+    const d=await r.json();
+    countEl.textContent=d.count;
+  }catch(e){}
+}
 
 function updateCountdown(){
   const now=new Date(),midnight=new Date(now);midnight.setHours(24,0,0,0);
@@ -332,10 +359,18 @@ async function fetchWikimediaImages(q){
   return Object.values(d.query.pages).filter(p=>p.imageinfo&&p.imageinfo[0]&&p.imageinfo[0].thumburl).map(p=>p.imageinfo[0].thumburl);
 }
 
+let _captionTimer=null;
 function setCaption(text){
   const el=document.getElementById('caption-overlay');
-  if(text){el.textContent=text;el.classList.add('show')}
-  else{el.textContent='';el.classList.remove('show')}
+  if(_captionTimer)clearInterval(_captionTimer);
+  el.textContent='';
+  if(!text){el.classList.remove('show');return}
+  el.classList.add('show');
+  let i=0;
+  _captionTimer=setInterval(()=>{
+    el.textContent+=text[i++];
+    if(i>=text.length)clearInterval(_captionTimer);
+  },35);
 }
 
 async function downloadImage(){
@@ -383,6 +418,8 @@ async function loadAnimal(){
   }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(currentChannel!=='memes')setCachedUrl(currentChannel,url);
+  document.getElementById('hud-right').textContent='UNIT: '+getCodename(currentChannel);
+  fetchReactions();
   img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
   img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};
   img.src=url;
