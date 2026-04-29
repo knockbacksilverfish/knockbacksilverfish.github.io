@@ -223,6 +223,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
           <div class="nav-controls">
             <div class="nav-btn" onclick="prevChannel()">&#x25C0;</div>
             <div class="nav-btn" onclick="nextChannel()">&#x25B6;</div>
+            <div class="nav-btn" onclick="downloadImage()" title="Download specimen">&#x2B07;</div>
             <div class="status-dot"></div>
           </div>
         </div>
@@ -240,7 +241,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
   <div class="readout">
     <div class="readout-cell"><div class="r-label">EARTH DATE</div><div class="r-value" id="info-date"></div></div>
     <div class="readout-cell"><div class="r-label">FREQUENCY</div><div class="r-value" id="info-channel">FREQ 01 — CATS</div></div>
-    <div class="readout-cell" id="like-cell" onclick="react()" title="Like this specimen" style="cursor:pointer;transition:all 0.3s"><div class="r-label" id="like-label">&#x2661; LIKES</div><div class="r-value" id="info-witnesses">—</div></div>
+    <div class="readout-cell"><div class="r-label">UNIT</div><div class="r-value" id="info-unit">—</div></div>
   </div>
 
   <div class="countdown-section">
@@ -250,16 +251,10 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
     </div>
   </div>
 
-  <div class="btn-row">
-    <a class="upload-link" id="upload-link" href="#" target="_blank">
-      <span class="upload-link-icon">&#x25B2;</span>
-      <span>TRANSMIT MEME</span>
-    </a>
-    <button class="download-btn" onclick="downloadImage()">
-      <span>&#x2B07;</span>
-      <span>DOWNLOAD SPECIMEN</span>
-    </button>
-  </div>
+  <a class="upload-link" id="upload-link" href="#" target="_blank">
+    <span class="upload-link-icon">&#x25B2;</span>
+    <span>TRANSMIT MEME</span>
+  </a>
 
   <footer>DAILY SPECIMEN VIEWER &middot; INTERCEPTED SIGNAL &middot; DO NOT DISTRIBUTE</footer>
 </div>
@@ -287,52 +282,10 @@ function getCodename(ch){
 }
 
 /* Reactions */
-function likeKey(ch){return'liked_'+ch+'_'+dayOfYear}
-function isLiked(ch){try{return!!localStorage.getItem(likeKey(ch))}catch(e){return false}}
-function setLiked(ch){try{localStorage.setItem(likeKey(ch),'1')}catch(e){}}
-function unsetLiked(ch){try{localStorage.removeItem(likeKey(ch))}catch(e){}}
-
-function updateLikeUI(liked){
-  const cell=document.getElementById('like-cell');
-  const label=document.getElementById('like-label');
-  if(liked){
-    label.textContent='♥ LIKED';
-    cell.style.borderColor='rgba(255,60,100,0.4)';
-    cell.style.background='rgba(255,60,100,0.06)';
-    cell.style.color='#ff3c64';
-  }else{
-    label.innerHTML='&#x2661; LIKES';
-    cell.style.borderColor='';
-    cell.style.background='';
-    cell.style.color='';
-  }
-}
-
-async function fetchReactions(){
-  try{
-    const r=await fetch(WORKER_URL+'/reactions?channel='+currentChannel);
-    const d=await r.json();
-    document.getElementById('info-witnesses').textContent=d.count;
-    updateLikeUI(isLiked(currentChannel));
-  }catch(e){}
-}
-
-async function react(){
-  const liked=isLiked(currentChannel);
-  // Optimistic UI
-  const countEl=document.getElementById('info-witnesses');
-  const current=parseInt(countEl.textContent)||0;
-  if(liked){unsetLiked(currentChannel);updateLikeUI(false);countEl.textContent=Math.max(0,current-1);}
-  else{setLiked(currentChannel);updateLikeUI(true);countEl.textContent=current+1;}
-  try{
-    const r=await fetch(WORKER_URL+'/react',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({channel:currentChannel,delta:liked?-1:1})
-    });
-    const d=await r.json();
-    countEl.textContent=d.count;
-  }catch(e){}
+function updateCodename(ch){
+  const name=getCodename(ch);
+  document.getElementById('info-unit').textContent=name;
+  document.getElementById('hud-right').textContent='UNIT: '+name;
 }
 
 function updateCountdown(){
@@ -418,8 +371,7 @@ async function loadAnimal(){
   }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(currentChannel!=='memes')setCachedUrl(currentChannel,url);
-  document.getElementById('hud-right').textContent='UNIT: '+getCodename(currentChannel);
-  fetchReactions();
+  updateCodename(currentChannel);
   img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
   img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};
   img.src=url;
