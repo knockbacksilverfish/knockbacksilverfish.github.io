@@ -74,16 +74,17 @@ async function dailyFromBucket(env, corsHeaders, workerUrl, prefix) {
 }
 
 async function dailyMeme(env, corsHeaders, workerUrl) {
-  // Check if a meme was manually selected for today
   const selectedKey = await env.RATE_LIMIT.get('memes:selected');
-  if (selectedKey) return json({ url: `${workerUrl}/img/${selectedKey}` }, 200, corsHeaders);
-
-  // Fall back to most recently uploaded
-  const list = await env.BUCKET.list({ prefix: 'memes/uploads/' });
-  const objects = list.objects.filter(o => !o.key.endsWith('/'));
-  if (!objects.length) return json({ error: 'No memes' }, 404, corsHeaders);
-  objects.sort((a, b) => b.key.localeCompare(a.key));
-  return json({ url: `${workerUrl}/img/${objects[0].key}` }, 200, corsHeaders);
+  const key = selectedKey || await (async () => {
+    const list = await env.BUCKET.list({ prefix: 'memes/uploads/' });
+    const objects = list.objects.filter(o => !o.key.endsWith('/'));
+    if (!objects.length) return null;
+    objects.sort((a, b) => b.key.localeCompare(a.key));
+    return objects[0].key;
+  })();
+  if (!key) return json({ error: 'No memes' }, 404, corsHeaders);
+  const caption = (await env.RATE_LIMIT.get(`caption:${key}`)) || '';
+  return json({ url: `${workerUrl}/img/${key}`, caption }, 200, corsHeaders);
 }
 
 async function serveImage(env, key, corsHeaders) {
@@ -131,6 +132,9 @@ async function upload(request, env, corsHeaders, ip) {
   const key = `memes/uploads/${Date.now()}.${ext}`;
   await env.BUCKET.put(key, buffer, { httpMetadata: { contentType: file.type } });
 
+  const caption = (fd.get('caption') || '').trim().slice(0, 120);
+  if (caption) await env.RATE_LIMIT.put(`caption:${key}`, caption);
+
   return json({ success: true, key }, 200, corsHeaders);
 }
 
@@ -163,10 +167,12 @@ async function selectMeme(request, env, corsHeaders, ip) {
 async function listMemes(env, corsHeaders, workerUrl) {
   const list = await env.BUCKET.list({ prefix: 'memes/uploads/' });
   const selectedKey = await env.RATE_LIMIT.get('memes:selected');
-  const memes = list.objects
-    .filter(o => !o.key.endsWith('/'))
-    .sort((a, b) => b.key.localeCompare(a.key))
-    .map(o => ({ url: `${workerUrl}/img/${o.key}`, key: o.key }));
+  const objects = list.objects.filter(o => !o.key.endsWith('/')).sort((a, b) => b.key.localeCompare(a.key));
+  const memes = await Promise.all(objects.map(async o => ({
+    url: `${workerUrl}/img/${o.key}`,
+    key: o.key,
+    caption: (await env.RATE_LIMIT.get(`caption:${o.key}`)) || '',
+  })));
   return json({ memes, selectedKey: selectedKey || null }, 200, corsHeaders);
 }
 
