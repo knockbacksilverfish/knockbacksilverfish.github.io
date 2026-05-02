@@ -65,12 +65,16 @@ async function clearRateLimit(env, ip) {
   await env.RATE_LIMIT.delete(`rl:${ip}`);
 }
 
+function noCache(corsHeaders) {
+  return { ...corsHeaders, 'Cache-Control': 'no-store' };
+}
+
 async function dailyFromBucket(env, corsHeaders, workerUrl, prefix) {
   const list = await env.BUCKET.list({ prefix });
   const objects = list.objects.filter(o => o.key !== prefix && !o.key.endsWith('/'));
-  if (!objects.length) return json({ error: `No images found in ${prefix}` }, 404, corsHeaders);
+  if (!objects.length) return json({ error: `No images found in ${prefix}` }, 404, noCache(corsHeaders));
   const idx = dayOfYear() % objects.length;
-  return json({ url: `${workerUrl}/img/${objects[idx].key}` }, 200, corsHeaders);
+  return json({ url: `${workerUrl}/img/${objects[idx].key}` }, 200, noCache(corsHeaders));
 }
 
 async function dailyMeme(env, corsHeaders, workerUrl) {
@@ -84,7 +88,7 @@ async function dailyMeme(env, corsHeaders, workerUrl) {
   })();
   if (!key) return json({ error: 'No memes' }, 404, corsHeaders);
   const caption = (await env.RATE_LIMIT.get(`caption:${key}`)) || '';
-  return json({ url: `${workerUrl}/img/${key}`, caption }, 200, corsHeaders);
+  return json({ url: `${workerUrl}/img/${key}`, caption }, 200, noCache(corsHeaders));
 }
 
 async function serveImage(env, key, corsHeaders) {

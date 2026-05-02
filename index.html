@@ -355,22 +355,24 @@ async function loadAnimal(){
   loader.querySelector('span').textContent='ACQUIRING SIGNAL...';
   img.classList.remove('loaded');loader.classList.remove('hidden');
   setCaption('');
-  const cached=currentChannel!=='memes'?getCachedUrl(currentChannel):null;
+  // Only cache frog (external Wikimedia API) — cat/bear/memes hit our own worker, no cache needed
+  const cached=currentChannel==='frog'?getCachedUrl('frog'):null;
   if(cached){img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};img.src=cached;return}
   let url='';
   try{
-    if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat');const d=await r.json();if(d.url)url=d.url}
+    const dateStr=today.toISOString().split('T')[0];
+    if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
     else if(currentChannel==='frog'){const imgs=await fetchWikimediaImages('frog amphibian photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
-    else if(currentChannel==='bear'){const r=await fetch(WORKER_URL+'/daily-bear');const d=await r.json();if(d.url)url=d.url}
+    else if(currentChannel==='bear'){const r=await fetch(WORKER_URL+'/daily-bear?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
     else if(currentChannel==='memes'){
-      const r=await fetch(WORKER_URL+'/daily-meme');
+      const r=await fetch(WORKER_URL+'/daily-meme?d='+dateStr);
       const d=await r.json();
       if(d.url)url=d.url;
       if(d.caption)setCaption(d.caption);
     }
   }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
-  if(currentChannel!=='memes')setCachedUrl(currentChannel,url);
+  if(currentChannel==='frog')setCachedUrl('frog',url);
   updateCodename(currentChannel);
   img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
   img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};
