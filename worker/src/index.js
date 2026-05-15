@@ -105,17 +105,21 @@ async function serveImage(env, key, corsHeaders) {
 
 async function sendUploadNotification(env, key, caption) {
   if (!env.RESEND_API_KEY || !env.NOTIFY_EMAIL) return;
-  const body = {
-    from: 'onboarding@resend.dev',
-    to: [env.NOTIFY_EMAIL],
-    subject: '📡 New meme uploaded',
-    html: `<p>New specimen uploaded to the archive.</p><p><b>File:</b> ${key}</p>${caption ? `<p><b>Caption:</b> ${caption}</p>` : ''}`,
-  };
-  fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }).catch(() => {});
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'onboarding@resend.dev',
+        to: [env.NOTIFY_EMAIL],
+        subject: '📡 New specimen uploaded',
+        html: `<p>New meme uploaded to the archive.</p><p><b>File:</b> ${key}</p>${caption ? `<p><b>Caption:</b> ${caption}</p>` : ''}`,
+      }),
+    });
+  } catch (_) {}
 }
 
 async function upload(request, env, corsHeaders, ip) {
@@ -154,7 +158,7 @@ async function upload(request, env, corsHeaders, ip) {
   const caption = (fd.get('caption') || '').trim().slice(0, 120);
   if (caption) await env.RATE_LIMIT.put(`caption:${key}`, caption);
 
-  sendUploadNotification(env, key, caption);
+  await sendUploadNotification(env, key, caption);
 
   return json({ success: true, key }, 200, corsHeaders);
 }
