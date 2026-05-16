@@ -305,11 +305,14 @@ function setCachedUrl(ch,url){
   localStorage.setItem(getCacheKey(ch),url)}catch(e){}
 }
 
-async function fetchWikimediaImages(q){
-  const u='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent(q)+'&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json&origin=*';
+async function fetchINaturalistFrog(dayIndex){
+  // taxon_id 20979 = Anura (all frogs), quality_grade=research = verified photos only
+  const page=(dayIndex%10)+1;
+  const u='https://api.inaturalist.org/v1/observations?taxon_id=20979&quality_grade=research&photos=true&per_page=30&page='+page+'&order=desc&order_by=votes';
   const r=await fetch(u);const d=await r.json();
-  if(!d.query||!d.query.pages)return[];
-  return Object.values(d.query.pages).filter(p=>p.imageinfo&&p.imageinfo[0]&&p.imageinfo[0].thumburl).map(p=>p.imageinfo[0].thumburl);
+  if(!d.results||!d.results.length)return null;
+  const obs=d.results[dayIndex%d.results.length];
+  return obs?.photos?.[0]?.url?.replace('square','large')||null;
 }
 
 let _captionTimer=null;
@@ -362,7 +365,7 @@ async function loadAnimal(){
   try{
     const dateStr=today.toISOString().split('T')[0];
     if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
-    else if(currentChannel==='frog'){const imgs=await fetchWikimediaImages('frog amphibian photo');if(imgs.length>0)url=imgs[dayOfYear%imgs.length]}
+    else if(currentChannel==='frog'){const u=await fetchINaturalistFrog(dayOfYear);if(u)url=u}
     else if(currentChannel==='bear'){const r=await fetch(WORKER_URL+'/daily-bear?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
     else if(currentChannel==='memes'){
       const r=await fetch(WORKER_URL+'/daily-meme?d='+dateStr);
