@@ -305,10 +305,9 @@ function setCachedUrl(ch,url){
   localStorage.setItem(getCacheKey(ch),url)}catch(e){}
 }
 
-async function fetchINaturalistFrog(dayIndex){
-  // taxon_id 20979 = Anura (all frogs), quality_grade=research = verified photos only
+async function fetchINaturalist(taxonId,dayIndex){
   const page=(dayIndex%10)+1;
-  const u='https://api.inaturalist.org/v1/observations?taxon_id=20979&quality_grade=research&photos=true&per_page=30&page='+page+'&order=desc&order_by=votes';
+  const u='https://api.inaturalist.org/v1/observations?taxon_id='+taxonId+'&quality_grade=research&photos=true&per_page=30&page='+page+'&order=desc&order_by=votes';
   const r=await fetch(u);const d=await r.json();
   if(!d.results||!d.results.length)return null;
   const obs=d.results[dayIndex%d.results.length];
@@ -365,8 +364,8 @@ async function loadAnimal(){
   try{
     const dateStr=today.toISOString().split('T')[0];
     if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
-    else if(currentChannel==='frog'){const u=await fetchINaturalistFrog(dayOfYear);if(u)url=u}
-    else if(currentChannel==='bear'){const r=await fetch(WORKER_URL+'/daily-bear?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
+    else if(currentChannel==='frog'){const u=await fetchINaturalist(20979,dayOfYear);if(u)url=u}
+    else if(currentChannel==='bear'){const u=await fetchINaturalist(41688,dayOfYear);if(u)url=u}
     else if(currentChannel==='memes'){
       const r=await fetch(WORKER_URL+'/daily-meme?d='+dateStr);
       const d=await r.json();
