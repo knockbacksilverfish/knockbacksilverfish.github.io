@@ -365,7 +365,7 @@ async function loadAnimal(){
     const dateStr=today.toISOString().split('T')[0];
     if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
     else if(currentChannel==='frog'){const u=await fetchINaturalist(20979,dayOfYear);if(u)url=u}
-    else if(currentChannel==='bear'){const u=await fetchINaturalist(41688,dayOfYear);if(u)url=u}
+    else if(currentChannel==='bear'){const u=await fetchINaturalist(41636,dayOfYear);if(u)url=u}
     else if(currentChannel==='memes'){
       const r=await fetch(WORKER_URL+'/daily-meme?d='+dateStr);
       const d=await r.json();

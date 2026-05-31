@@ -24,6 +24,11 @@ function dayOfYear() {
   return Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
 }
 
+function dayOfYearFromStr(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+}
+
 const EXT_MAP = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp' };
 
 function validImageMagic(bytes) {
@@ -69,11 +74,12 @@ function noCache(corsHeaders) {
   return { ...corsHeaders, 'Cache-Control': 'no-store' };
 }
 
-async function dailyFromBucket(env, corsHeaders, workerUrl, prefix) {
+async function dailyFromBucket(env, corsHeaders, workerUrl, prefix, reqUrl) {
   const list = await env.BUCKET.list({ prefix });
   const objects = list.objects.filter(o => o.key !== prefix && !o.key.endsWith('/'));
   if (!objects.length) return json({ error: `No images found in ${prefix}` }, 404, noCache(corsHeaders));
-  const idx = dayOfYear() % objects.length;
+  const dateStr = reqUrl.searchParams.get('d');
+  const idx = (dateStr ? dayOfYearFromStr(dateStr) : dayOfYear()) % objects.length;
   return json({ url: `${workerUrl}/img/${objects[idx].key}` }, 200, noCache(corsHeaders));
 }
 
@@ -231,8 +237,8 @@ export default {
 
       if (request.method === 'OPTIONS') return new Response(null, { headers: c });
 
-      if (pathname === '/daily-cat'  && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'cats/');
-      if (pathname === '/daily-bear' && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'bears/');
+      if (pathname === '/daily-cat'  && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'cats/', url);
+      if (pathname === '/daily-bear' && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'bears/', url);
       if (pathname === '/daily-meme' && request.method === 'GET') return dailyMeme(env, c, workerUrl);
       if (pathname.startsWith('/img/') && request.method === 'GET') return serveImage(env, pathname.slice(5), c);
       if (pathname === '/memes'     && request.method === 'GET')  return listMemes(env, c, workerUrl);
