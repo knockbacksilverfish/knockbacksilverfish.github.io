@@ -362,7 +362,7 @@ async function loadAnimal(){
   if(cached){img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};img.src=cached;return}
   let url='';
   try{
-    const dateStr=today.toISOString().split('T')[0];
+    const dateStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
     if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
     else if(currentChannel==='frog'){const u=await fetchINaturalist(20979,dayOfYear);if(u)url=u}
     else if(currentChannel==='bear'){const u=await fetchINaturalist(41636,dayOfYear);if(u)url=u}
