@@ -357,13 +357,12 @@ async function loadAnimal(){
   loader.querySelector('span').textContent='ACQUIRING SIGNAL...';
   img.classList.remove('loaded');loader.classList.remove('hidden');
   setCaption('');
-  // Only cache frog (external Wikimedia API) — cat/bear/memes hit our own worker, no cache needed
-  const cached=currentChannel==='frog'?getCachedUrl('frog'):null;
+  const cached=(currentChannel==='frog'||currentChannel==='cat'||currentChannel==='bear')?getCachedUrl(currentChannel):null;
   if(cached){img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};img.src=cached;return}
   let url='';
   try{
     const dateStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-    if(currentChannel==='cat'){const r=await fetch(WORKER_URL+'/daily-cat?d='+dateStr);const d=await r.json();if(d.url)url=d.url}
+    if(currentChannel==='cat'){const u=await fetchINaturalist(118552,dayOfYear);if(u)url=u}
     else if(currentChannel==='frog'){const u=await fetchINaturalist(20979,dayOfYear);if(u)url=u}
     else if(currentChannel==='bear'){const u=await fetchINaturalist(41636,dayOfYear);if(u)url=u}
     else if(currentChannel==='memes'){
@@ -374,7 +373,7 @@ async function loadAnimal(){
     }
   }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
-  if(currentChannel==='frog')setCachedUrl('frog',url);
+  if(currentChannel==='frog'||currentChannel==='cat'||currentChannel==='bear')setCachedUrl(currentChannel,url);
   updateCodename(currentChannel);
   img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
   img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};
