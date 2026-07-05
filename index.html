@@ -22,7 +22,7 @@
   --glow-green:#00ff88;
   --glow-red:#ff3344;
   --text:#c0dce8;
-  --muted:#3a5060;
+  --muted:#5d7d90;
   --border:rgba(0,240,255,0.12);
   --cyan-glow:0 0 8px rgba(0,240,255,0.4),0 0 20px rgba(0,240,255,0.15);
   --green-glow:0 0 8px rgba(0,255,136,0.4),0 0 20px rgba(0,255,136,0.15);
@@ -185,6 +185,49 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
 @keyframes border-breathe{0%,100%{opacity:0.4}50%{opacity:0.7}}
 .viewport.switching img{opacity:0!important;transition:none}
 
+/* Boot sequence */
+.boot{position:fixed;inset:0;z-index:9999;background:var(--void);display:flex;align-items:center;justify-content:center;transition:opacity 0.5s ease}
+.boot.done{opacity:0;pointer-events:none}
+.boot pre{font-family:'Share Tech Mono',monospace;font-size:0.95rem;color:var(--glow-green);text-shadow:var(--green-glow);line-height:1.8;letter-spacing:0.08em;white-space:pre-wrap;padding:1rem;max-width:90vw}
+.boot pre::after{content:'\2588';animation:blink 0.8s step-end infinite}
+
+/* CRT static transition */
+#static-fx{position:absolute;inset:0;width:100%;height:100%;z-index:6;pointer-events:none;opacity:0;mix-blend-mode:screen;image-rendering:pixelated}
+#static-fx.on{opacity:0.9}
+
+/* Signal meter */
+.sig-meter{display:flex;align-items:flex-end;gap:2px;height:14px;margin-right:4px}
+.sig-meter i{width:3px;background:var(--glow-green);box-shadow:0 0 4px rgba(0,255,136,0.5);animation:sigbar 1.6s ease-in-out infinite}
+.sig-meter i:nth-child(1){height:30%;animation-delay:0s}
+.sig-meter i:nth-child(2){height:50%;animation-delay:0.2s}
+.sig-meter i:nth-child(3){height:70%;animation-delay:0.4s}
+.sig-meter i:nth-child(4){height:88%;animation-delay:0.6s}
+.sig-meter i:nth-child(5){height:100%;animation-delay:0.8s}
+@keyframes sigbar{0%,100%{opacity:1}50%{opacity:0.25}}
+
+/* Retry */
+.retry-btn{display:none;margin-top:1rem;padding:0.5rem 1.4rem;border:1px solid var(--glow-cyan);background:rgba(0,240,255,0.05);color:var(--glow-cyan);font-family:'Orbitron',monospace;font-size:0.6rem;font-weight:700;letter-spacing:0.2em;cursor:pointer;clip-path:polygon(4% 0%,96% 0%,100% 25%,100% 75%,96% 100%,4% 100%,0% 75%,0% 25%);transition:all 0.2s}
+.retry-btn:hover{background:rgba(0,240,255,0.12);box-shadow:var(--cyan-glow)}
+.retry-btn.show{display:inline-block}
+
+/* Field report dossier */
+.dossier{margin-top:1rem;width:720px;max-width:95vw;animation:fadeUp 0.8s ease-out both;display:none}
+.dossier.show{display:block}
+.dossier-box{background:rgba(0,240,255,0.02);border:1px solid var(--border);padding:1rem 1.4rem;position:relative;clip-path:polygon(2% 0%,98% 0%,100% 12%,100% 88%,98% 100%,2% 100%,0% 88%,0% 12%)}
+.dossier-box::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--glow-cyan),transparent)}
+.dossier-title{font-family:'Orbitron',monospace;font-size:0.5rem;font-weight:700;color:var(--glow-cyan);text-shadow:0 0 6px rgba(0,240,255,0.3);letter-spacing:0.25em;margin-bottom:0.7rem;display:flex;justify-content:space-between;align-items:center}
+.dossier-title .stamp{color:var(--glow-red);border:1px solid var(--glow-red);padding:0.1rem 0.5rem;font-size:0.42rem;letter-spacing:0.2em;transform:rotate(-2deg)}
+.dossier-grid{display:grid;grid-template-columns:auto 1fr;gap:0.35rem 1.2rem;font-size:0.82rem}
+.dossier-grid dt{font-family:'Orbitron',monospace;font-size:0.45rem;font-weight:700;color:var(--muted);letter-spacing:0.18em;align-self:center;text-transform:uppercase}
+.dossier-grid dd{color:var(--text);letter-spacing:0.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dossier-grid dd.sci{font-style:italic;color:var(--glow-green);text-shadow:0 0 6px rgba(0,255,136,0.2)}
+.dossier-grid dd.attrib{font-size:0.7rem;color:var(--muted);white-space:normal}
+@media(max-width:640px){.dossier-grid{font-size:0.75rem}.dossier-box{padding:0.8rem 1rem}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}
+}
+
 @media(max-width:640px){
   .page{padding:1rem 0.5rem}
   .header h1{font-size:1.1rem}
@@ -211,6 +254,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
 </style>
 </head>
 <body>
+<div class="boot" id="boot"><pre id="boot-text"></pre></div>
 <div class="page">
   <header class="header">
     <div class="classification">&#x25C8; CLASSIFIED — LEVEL 7 CLEARANCE &#x25C8;</div>
@@ -224,7 +268,8 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
       <div class="inner-panel">
         <div class="viewport" id="screen">
           <img id="animal-img" alt="Transmission feed" />
-          <div class="loader" id="loader"><div class="spinner-ring"></div><span aria-live="polite">ACQUIRING SIGNAL...</span></div>
+          <canvas id="static-fx"></canvas>
+          <div class="loader" id="loader"><div class="spinner-ring"></div><span aria-live="polite">ACQUIRING SIGNAL...</span><button class="retry-btn" id="retry-btn">&#x21BB; RE-ACQUIRE</button></div>
           <div class="ch-overlay" id="ch-indicator">FREQ 01</div>
           <div class="caption-overlay" id="caption-overlay"></div>
           <div class="hud-bar"><span id="hud-left">FEED::ACTIVE</span><span id="hud-right">XENO-SAT III</span></div>
@@ -232,6 +277,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
         <div class="controls-row">
           <div class="vessel-label">SPECIMEN VIEWER v3.7</div>
           <div class="nav-controls">
+            <div class="sig-meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
             <button class="nav-btn" onclick="prevChannel()" aria-label="Previous channel">&#x25C0;</button>
             <button class="nav-btn" onclick="nextChannel()" aria-label="Next channel">&#x25B6;</button>
             <button class="nav-btn" onclick="downloadImage()" title="Download specimen" aria-label="Download specimen">&#x2B07;</button>
@@ -253,6 +299,19 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
     <div class="readout-cell"><div class="r-label">EARTH DATE</div><div class="r-value" id="info-date"></div></div>
     <div class="readout-cell"><div class="r-label">FREQUENCY</div><div class="r-value" id="info-channel">FREQ 01 — CATS</div></div>
     <div class="readout-cell"><div class="r-label">UNIT</div><div class="r-value" id="info-unit">—</div></div>
+  </div>
+
+  <div class="dossier" id="dossier">
+    <div class="dossier-box">
+      <div class="dossier-title"><span>&#x25C8; FIELD REPORT</span><span class="stamp">DECLASSIFIED</span></div>
+      <dl class="dossier-grid">
+        <dt>Species</dt><dd class="sci" id="dr-species">—</dd>
+        <dt>Designation</dt><dd id="dr-common">—</dd>
+        <dt>Location</dt><dd id="dr-place">—</dd>
+        <dt>Observed</dt><dd id="dr-date">—</dd>
+        <dt>Source</dt><dd class="attrib" id="dr-attrib">—</dd>
+      </dl>
+    </div>
   </div>
 
   <div class="countdown-section">
@@ -311,12 +370,16 @@ function updateCountdown(){
 }
 updateCountdown();setInterval(updateCountdown,1000);
 
-function getCacheKey(ch){return 'esquisse_'+ch+'_'+dayOfYear}
-function getCachedUrl(ch){try{return localStorage.getItem(getCacheKey(ch))}catch(e){return null}}
-function setCachedUrl(ch,url){
-  try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith('esquisse_'+ch+'_')&&k!==getCacheKey(ch))localStorage.removeItem(k)}
-  localStorage.setItem(getCacheKey(ch),url)}catch(e){}
+function getCacheKey(ch){return 'specimen_'+ch+'_'+dayOfYear}
+function getCachedEntry(ch){
+  try{const raw=localStorage.getItem(getCacheKey(ch));if(!raw)return null;
+  const e=JSON.parse(raw);return (e&&e.url)?e:null}catch(e){return null}
 }
+function setCachedEntry(ch,entry){
+  try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&(k.startsWith('specimen_'+ch+'_')||k.startsWith('esquisse_'))&&k!==getCacheKey(ch))localStorage.removeItem(k)}
+  localStorage.setItem(getCacheKey(ch),JSON.stringify(entry))}catch(e){}
+}
+function clearCachedEntry(ch){try{localStorage.removeItem(getCacheKey(ch))}catch(e){}}
 
 async function fetchINaturalist(taxonId,dayIndex){
   const page=(dayIndex%10)+1;
@@ -324,7 +387,26 @@ async function fetchINaturalist(taxonId,dayIndex){
   const r=await fetch(u);const d=await r.json();
   if(!d.results||!d.results.length)return null;
   const obs=d.results[dayIndex%d.results.length];
-  return obs?.photos?.[0]?.url?.replace('square','large')||null;
+  const url=obs?.photos?.[0]?.url?.replace('square','large')||null;
+  if(!url)return null;
+  return {url,meta:{
+    species:obs.taxon?.name||'',
+    common:obs.taxon?.preferred_common_name||'',
+    place:obs.place_guess||'',
+    date:obs.observed_on||'',
+    attrib:obs.photos?.[0]?.attribution||''
+  }};
+}
+
+function renderDossier(meta){
+  const d=document.getElementById('dossier');
+  if(!meta||!meta.species){d.classList.remove('show');return}
+  document.getElementById('dr-species').textContent=meta.species||'—';
+  document.getElementById('dr-common').textContent=(meta.common||'UNKNOWN').toUpperCase();
+  document.getElementById('dr-place').textContent=meta.place||'COORDINATES WITHHELD';
+  document.getElementById('dr-date').textContent=meta.date||'—';
+  document.getElementById('dr-attrib').textContent=meta.attrib||'—';
+  d.classList.add('show');
 }
 
 let _captionTimer=null;
@@ -367,42 +449,68 @@ document.getElementById('screen').addEventListener('click',function(e){
 
 let _loadToken=0;
 const DAILY_CHANNELS=['cat','frog','bear'];
-function clearCachedUrl(ch){try{localStorage.removeItem(getCacheKey(ch))}catch(e){}}
+const TAXON={cat:118552,frog:20979,bear:41636};
+
+function showError(loader,msg){
+  loader.querySelector('span').textContent=msg;
+  document.getElementById('retry-btn').classList.add('show');
+}
 
 async function loadAnimal(retried){
   const token=++_loadToken;
   const ch=currentChannel;
   const img=document.getElementById('animal-img'),loader=document.getElementById('loader');
   loader.querySelector('span').textContent='ACQUIRING SIGNAL...';
+  document.getElementById('retry-btn').classList.remove('show');
   img.classList.remove('loaded');loader.classList.remove('hidden');
   setCaption('');
-  const cached=(DAILY_CHANNELS.includes(ch)&&!retried)?getCachedUrl(ch):null;
+  const cached=(DAILY_CHANNELS.includes(ch)&&!retried)?getCachedEntry(ch):null;
   if(cached){
-    updateCodename(ch);
+    updateCodename(ch);renderDossier(cached.meta);
     img.onload=()=>{if(token===_loadToken){img.classList.add('loaded');loader.classList.add('hidden')}};
-    img.onerror=()=>{if(token===_loadToken){clearCachedUrl(ch);loadAnimal(true)}};
-    img.src=cached;return;
+    img.onerror=()=>{if(token===_loadToken){clearCachedEntry(ch);loadAnimal(true)}};
+    img.src=cached.url;return;
   }
-  let url='';
+  let url='',meta=null;
   try{
     const dateStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-    if(ch==='cat'){const u=await fetchINaturalist(118552,dayOfYear);if(u)url=u}
-    else if(ch==='frog'){const u=await fetchINaturalist(20979,dayOfYear);if(u)url=u}
-    else if(ch==='bear'){const u=await fetchINaturalist(41636,dayOfYear);if(u)url=u}
-    else if(ch==='memes'){
+    if(DAILY_CHANNELS.includes(ch)){
+      const e=await fetchINaturalist(TAXON[ch],dayOfYear);
+      if(e){url=e.url;meta=e.meta}
+    } else if(ch==='memes'){
       const r=await fetch(WORKER_URL+'/daily-meme?d='+dateStr);
       const d=await r.json();
       if(d.url)url=d.url;
       if(token===_loadToken&&d.caption)setCaption(d.caption);
     }
-  }catch(e){if(token===_loadToken)loader.querySelector('span').textContent='NO SIGNAL';return}
+  }catch(e){if(token===_loadToken)showError(loader,'NO SIGNAL');return}
   if(token!==_loadToken)return;
-  if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
-  if(DAILY_CHANNELS.includes(ch))setCachedUrl(ch,url);
-  updateCodename(ch);
+  if(!url){showError(loader,'NO SIGNAL');return}
+  if(DAILY_CHANNELS.includes(ch))setCachedEntry(ch,{url,meta});
+  updateCodename(ch);renderDossier(meta);
   img.onload=()=>{if(token===_loadToken){img.classList.add('loaded');loader.classList.add('hidden')}};
-  img.onerror=()=>{if(token===_loadToken){clearCachedUrl(ch);loader.querySelector('span').textContent='SIGNAL LOST'}};
+  img.onerror=()=>{if(token===_loadToken){clearCachedEntry(ch);showError(loader,'SIGNAL LOST')}};
   img.src=url;
+}
+document.getElementById('retry-btn').addEventListener('click',e=>{e.stopPropagation();loadAnimal(true)});
+
+/* CRT static burst */
+const REDUCED_MOTION=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function staticBurst(duration,cb){
+  if(REDUCED_MOTION){cb();return}
+  const cv=document.getElementById('static-fx'),ctx=cv.getContext('2d');
+  cv.width=160;cv.height=100;cv.classList.add('on');
+  const start=performance.now();
+  (function frame(){
+    const d=ctx.createImageData(cv.width,cv.height);
+    for(let i=0;i<d.data.length;i+=4){
+      const v=Math.random()*255;
+      d.data[i]=v*0.4;d.data[i+1]=v;d.data[i+2]=v*0.9;d.data[i+3]=255;
+    }
+    ctx.putImageData(d,0,0);
+    if(performance.now()-start<duration)requestAnimationFrame(frame);
+    else{cv.classList.remove('on');cb()}
+  })();
 }
 
 function switchChannel(ch,btnEl){
@@ -413,12 +521,53 @@ function switchChannel(ch,btnEl){
   const ind=document.getElementById('ch-indicator');
   ind.textContent='FREQ 0'+n;ind.classList.remove('show');void ind.offsetWidth;ind.classList.add('show');
   document.getElementById('info-channel').textContent='FREQ 0'+n+' \u2014 '+channelNames[ch];
-  const scr=document.getElementById('screen');
-  scr.classList.add('switching');setTimeout(()=>{scr.classList.remove('switching');loadAnimal()},250);
+  const img=document.getElementById('animal-img');
+  img.classList.remove('loaded');
+  staticBurst(320,loadAnimal);
 }
 function nextChannel(){const i=channels.indexOf(currentChannel);const n=channels[(i+1)%channels.length];switchChannel(n,document.querySelector('[data-channel="'+n+'"]'))}
 function prevChannel(){const i=channels.indexOf(currentChannel);const p=channels[(i-1+channels.length)%channels.length];switchChannel(p,document.querySelector('[data-channel="'+p+'"]'))}
-loadAnimal();
+
+/* HUD telemetry rotation */
+(function(){
+  const el=document.getElementById('hud-left');
+  const lat=(Math.abs(seededInt(dayOfYear,17000))/100-85).toFixed(2);
+  const lon=(Math.abs(seededInt(dayOfYear+7,36000))/100-180).toFixed(2);
+  const feeds=[
+    ()=>'FEED::ACTIVE',
+    ()=>'SIG '+(86+Math.random()*13).toFixed(1)+'%',
+    ()=>'POS '+lat+'° / '+lon+'°',
+    ()=>'ENC::AES-256 ◈ LOCKED',
+  ];
+  let i=0;
+  setInterval(()=>{i=(i+1)%feeds.length;el.textContent=feeds[i]()},4000);
+})();
+
+/* Boot sequence — once per session */
+(function(){
+  const boot=document.getElementById('boot');
+  if(REDUCED_MOTION||sessionStorage.getItem('booted')){boot.remove();loadAnimal();return}
+  sessionStorage.setItem('booted','1');
+  const lines=[
+    '> XENO-SAT III — UPLINK REQUEST',
+    '> HANDSHAKE ........ OK',
+    '> DECRYPTING FEED ........ OK',
+    '> CLEARANCE LEVEL 7 VERIFIED',
+    '> TRANSMISSION LIVE',
+  ];
+  const el=document.getElementById('boot-text');
+  let li=0,ci=0;
+  loadAnimal();
+  (function type(){
+    if(li>=lines.length){
+      setTimeout(()=>{boot.classList.add('done');setTimeout(()=>boot.remove(),600)},350);
+      return;
+    }
+    el.textContent+=lines[li][ci++];
+    if(ci>=lines[li].length){el.textContent+='\n';li++;ci=0;setTimeout(type,120)}
+    else setTimeout(type,10);
+  })();
+})();
 </script>
 </body>
 </html>
