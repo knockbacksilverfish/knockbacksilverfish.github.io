@@ -102,6 +102,8 @@ body::after{
 .viewport .loader{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--glow-cyan);font-size:1rem;font-family:'Orbitron',monospace;font-weight:400;text-shadow:var(--cyan-glow);letter-spacing:0.2em}
 .viewport .loader.hidden{display:none}
 .spinner-ring{width:40px;height:40px;margin-bottom:1rem;border:2px solid rgba(0,240,255,0.1);border-top:2px solid var(--glow-cyan);border-radius:50%;animation:spin 1s linear infinite;box-shadow:var(--cyan-glow)}
+.osd-rec{position:absolute;top:12px;left:16px;z-index:8;font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:700;letter-spacing:0.15em;color:var(--glow-red);display:flex;align-items:center;gap:0.4rem;pointer-events:none}
+.osd-rec::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--glow-red);box-shadow:0 0 8px rgba(255,51,68,0.6);animation:pulse-dot 1.2s ease-in-out infinite}
 .ch-overlay{position:absolute;top:12px;right:16px;z-index:10;font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;color:var(--glow-cyan);text-shadow:var(--cyan-glow);opacity:0;pointer-events:none;letter-spacing:0.15em}
 .ch-overlay.show{animation:ch-flash 2s ease-out forwards}
 .hud-bar{position:absolute;bottom:0;left:0;right:0;z-index:8;padding:6px 12px;background:linear-gradient(0deg,rgba(0,0,0,0.7),transparent);display:flex;justify-content:space-between;align-items:center;font-size:0.65rem;color:rgba(0,240,255,0.5);letter-spacing:0.1em;pointer-events:none}
@@ -132,8 +134,11 @@ body::after{
 }
 .freq-btn:hover{background:rgba(0,240,255,0.06);color:var(--text);border-color:rgba(0,240,255,0.2)}
 .freq-btn.active{background:rgba(0,240,255,0.08);color:var(--glow-cyan);border-color:rgba(0,240,255,0.3);text-shadow:var(--cyan-glow);box-shadow:inset 0 0 20px rgba(0,240,255,0.05)}
-.freq-btn .freq-id{font-family:'Orbitron',monospace;font-size:0.45rem;font-weight:700;opacity:0.4;letter-spacing:0.2em}
-.freq-btn .freq-name{font-size:1.05rem;letter-spacing:0.08em}
+.freq-btn .freq-id{font-family:'Orbitron',monospace;font-size:0.45rem;font-weight:700;opacity:0.55;letter-spacing:0.2em}
+.freq-btn .freq-name{font-size:1.05rem;letter-spacing:0.08em;display:flex;align-items:center;gap:0.45rem}
+.freq-ico{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.freq-ico .dot{fill:currentColor;stroke:none}
+.freq-btn.active .freq-ico{filter:drop-shadow(0 0 4px rgba(0,240,255,0.5))}
 
 .readout{margin-top:1.2rem;width:720px;max-width:95vw;display:flex;gap:2px;animation:fadeUp 0.8s ease-out 0.7s both}
 .readout-cell{flex:1;background:rgba(0,240,255,0.02);border:1px solid rgba(0,240,255,0.06);padding:0.8rem 0.6rem;text-align:center;clip-path:polygon(3% 0%,97% 0%,100% 15%,100% 85%,97% 100%,3% 100%,0% 85%,0% 15%)}
@@ -270,6 +275,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
           <img id="animal-img" alt="Transmission feed" />
           <canvas id="static-fx"></canvas>
           <div class="loader" id="loader"><div class="spinner-ring"></div><span aria-live="polite">ACQUIRING SIGNAL...</span><button class="retry-btn" id="retry-btn">&#x21BB; RE-ACQUIRE</button></div>
+          <div class="osd-rec">REC</div>
           <div class="ch-overlay" id="ch-indicator">FREQ 01</div>
           <div class="caption-overlay" id="caption-overlay"></div>
           <div class="hud-bar"><span id="hud-left">FEED::ACTIVE</span><span id="hud-right">XENO-SAT III</span></div>
@@ -280,7 +286,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
             <div class="sig-meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
             <button class="nav-btn" onclick="prevChannel()" aria-label="Previous channel">&#x25C0;</button>
             <button class="nav-btn" onclick="nextChannel()" aria-label="Next channel">&#x25B6;</button>
-            <button class="nav-btn" onclick="downloadImage()" title="Download specimen" aria-label="Download specimen">&#x2B07;</button>
+            <button class="nav-btn" onclick="downloadImage()" title="Download specimen" aria-label="Download specimen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg></button>
             <div class="status-dot"></div>
           </div>
         </div>
@@ -289,10 +295,10 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
   </div>
 
   <div class="freq-bar">
-    <button class="freq-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="freq-id">FREQ 01</span><span class="freq-name">&#x1F431; CATS</span></button>
-    <button class="freq-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="freq-id">FREQ 02</span><span class="freq-name">&#x1F438; FROGS</span></button>
-    <button class="freq-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="freq-id">FREQ 03</span><span class="freq-name">&#x1F43B; BEARS</span></button>
-    <button class="freq-btn" data-channel="memes" onclick="switchChannel('memes',this)"><span class="freq-id">FREQ 04</span><span class="freq-name">&#x1F5BC; MEMES</span></button>
+    <button class="freq-btn active" data-channel="cat" onclick="switchChannel('cat',this)"><span class="freq-id">FREQ 01</span><span class="freq-name"><svg class="freq-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10V4l3.5 3.2a7 7 0 0 1 5 0L18 4v6a6 6.2 0 1 1-12 0Z"/><circle class="dot" cx="9.5" cy="12" r="0.9"/><circle class="dot" cx="14.5" cy="12" r="0.9"/><path d="M10.5 15.2q1.5 1.3 3 0"/></svg>CATS</span></button>
+    <button class="freq-btn" data-channel="frog" onclick="switchChannel('frog',this)"><span class="freq-id">FREQ 02</span><span class="freq-name"><svg class="freq-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/><circle class="dot" cx="8" cy="7" r="1"/><circle class="dot" cx="16" cy="7" r="1"/><path d="M5 10.5C5 16 8 19 12 19s7-3 7-8.5M8.5 15q3.5 2.5 7 0"/></svg>FROGS</span></button>
+    <button class="freq-btn" data-channel="bear" onclick="switchChannel('bear',this)"><span class="freq-id">FREQ 03</span><span class="freq-name"><svg class="freq-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7.5" r="2.2"/><circle cx="17" cy="7.5" r="2.2"/><circle cx="12" cy="13" r="7"/><circle class="dot" cx="9.5" cy="11.5" r="0.9"/><circle class="dot" cx="14.5" cy="11.5" r="0.9"/><circle class="dot" cx="12" cy="14.5" r="1.2"/></svg>BEARS</span></button>
+    <button class="freq-btn" data-channel="memes" onclick="switchChannel('memes',this)"><span class="freq-id">FREQ 04</span><span class="freq-name"><svg class="freq-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="1"/><circle class="dot" cx="8.5" cy="9.5" r="1.2"/><path d="M6 16.5l4.5-4.5 3.5 3.5 2.5-2.5 3 3"/></svg>MEMES</span></button>
   </div>
 
   <div class="readout">
@@ -326,7 +332,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
     <span>TRANSMIT MEME</span>
   </a>
 
-  <footer>DAILY SPECIMEN VIEWER &middot; INTERCEPTED SIGNAL &middot; DO NOT DISTRIBUTE</footer>
+  <footer>DAILY SPECIMEN VIEWER &middot; INTERCEPTED SIGNAL &middot; DO NOT DISTRIBUTE<br><span style="font-size:0.62rem;opacity:0.6">&#x25C2;&#x25B8; TUNE &middot; 1&ndash;4 FREQ &middot; F FULLSCREEN &middot; D SAVE</span></footer>
 </div>
 
 <script>
@@ -527,6 +533,16 @@ function switchChannel(ch,btnEl){
 }
 function nextChannel(){const i=channels.indexOf(currentChannel);const n=channels[(i+1)%channels.length];switchChannel(n,document.querySelector('[data-channel="'+n+'"]'))}
 function prevChannel(){const i=channels.indexOf(currentChannel);const p=channels[(i-1+channels.length)%channels.length];switchChannel(p,document.querySelector('[data-channel="'+p+'"]'))}
+
+/* Keyboard shortcuts */
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea')||e.metaKey||e.ctrlKey||e.altKey)return;
+  if(e.key==='ArrowRight')nextChannel();
+  else if(e.key==='ArrowLeft')prevChannel();
+  else if(e.key>='1'&&e.key<='4'){const ch=channels[e.key-1];switchChannel(ch,document.querySelector('[data-channel="'+ch+'"]'))}
+  else if(e.key==='f'||e.key==='F')document.getElementById('screen').click();
+  else if(e.key==='d'||e.key==='D')downloadImage();
+});
 
 /* HUD telemetry rotation */
 (function(){
