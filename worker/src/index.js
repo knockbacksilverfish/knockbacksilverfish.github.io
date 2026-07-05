@@ -97,7 +97,12 @@ async function dailyMeme(env, corsHeaders, workerUrl) {
   return json({ url: `${workerUrl}/img/${key}`, caption }, 200, noCache(corsHeaders));
 }
 
+const PUBLIC_PREFIXES = ['cats/', 'bears/', 'frogs/', 'memes/'];
+
 async function serveImage(env, key, corsHeaders) {
+  if (!PUBLIC_PREFIXES.some(p => key.startsWith(p))) {
+    return new Response('Not found', { status: 404, headers: corsHeaders });
+  }
   const obj = await env.BUCKET.get(key);
   if (!obj) return new Response('Not found', { status: 404, headers: corsHeaders });
   return new Response(obj.body, {

@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meme Upload — Daily Specimen Viewer</title>
+<meta name="description" content="Upload terminal — submit specimens for broadcast. Authorized personnel only.">
+<meta name="theme-color" content="#06080c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2306080c'/%3E%3Cpath d='M50 8L92 29v42L50 92 8 71V29z' fill='none' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%2300ff88'/%3E%3C/svg%3E">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -38,9 +43,9 @@ body::before{
 body::after{
   content:'';position:fixed;top:0;left:0;right:0;height:2px;z-index:9998;
   background:linear-gradient(90deg,transparent,rgba(0,240,255,0.3),transparent);
-  animation:scanSweep 4s linear infinite;pointer-events:none;
+  animation:scanSweep 4s linear infinite;pointer-events:none;will-change:transform;
 }
-@keyframes scanSweep{0%{top:0}100%{top:100vh}}
+@keyframes scanSweep{0%{transform:translateY(0)}100%{transform:translateY(100vh)}}
 @keyframes phaseIn{0%{opacity:0;transform:translateY(-15px);filter:blur(4px)}100%{opacity:1;transform:translateY(0);filter:blur(0)}}
 @keyframes materialize{0%{opacity:0;transform:scale(0.97)}100%{opacity:1;transform:scale(1)}}
 @keyframes pulse-border{0%,100%{opacity:0.6}50%{opacity:1}}
@@ -312,6 +317,8 @@ uploadBtn.addEventListener('click',async()=>{
 
 function showStatus(msg,type){statusEl.textContent=msg;statusEl.className='status show '+type}
 
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+
 async function selectMeme(key){
   const pwd=passwordField.value||prompt('Authorization code:');
   if(!pwd)return;
@@ -345,16 +352,21 @@ async function loadGallery(){
     galleryEmpty.style.display='none';
     gallery.innerHTML=data.memes.map(m=>{
       const sel=m.key===data.selectedKey;
-      const cap=m.caption?'<div style="font-size:0.75rem;color:var(--muted);text-align:center;padding:0 0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+m.caption.replace(/"/g,'&quot;')+'">'+m.caption+'</div>':'';
+      const safeCap=escapeHtml(m.caption||'');
+      const cap=m.caption?'<div style="font-size:0.75rem;color:var(--muted);text-align:center;padding:0 0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+safeCap+'">'+safeCap+'</div>':'';
       return '<div class="gallery-card'+(sel?' selected':'')+'">'+
-        '<img src="'+m.url+'" alt="Specimen" loading="lazy"/>'+
+        '<img src="'+escapeHtml(m.url)+'" alt="Specimen" loading="lazy"/>'+
         '<div class="selected-badge">&#x25C8; TODAY\'S BROADCAST &#x25C8;</div>'+
         cap+
-        '<button class="select-btn" onclick="selectMeme(\''+m.key.replace(/'/g,"\\'")+'\')">'+(sel?'BROADCASTING':'SET TODAY')+'</button>'+
+        '<button class="select-btn" data-key="'+escapeHtml(m.key)+'">'+(sel?'BROADCASTING':'SET TODAY')+'</button>'+
         '</div>';
     }).join('');
   }catch(e){galleryEmpty.textContent='Archive unavailable'}
 }
+gallery.addEventListener('click',e=>{
+  const btn=e.target.closest('.select-btn');
+  if(btn)selectMeme(btn.dataset.key);
+});
 loadGallery();
 </script>
 </body>

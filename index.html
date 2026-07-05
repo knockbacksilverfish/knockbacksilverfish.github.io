@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Specimen Viewer</title>
+<meta name="description" content="Intercepted transmission feed — one classified animal specimen per day across four frequencies.">
+<meta name="theme-color" content="#06080c">
+<meta property="og:title" content="Daily Specimen Viewer">
+<meta property="og:description" content="Intercepted transmission feed — one classified animal specimen per day.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2306080c'/%3E%3Cpath d='M50 8L92 29v42L50 92 8 71V29z' fill='none' stroke='%2300f0ff' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%2300ff88'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -37,9 +45,9 @@ body::before{
 body::after{
   content:'';position:fixed;top:0;left:0;right:0;height:2px;z-index:9998;
   background:linear-gradient(90deg,transparent,rgba(0,240,255,0.3),transparent);
-  animation:scanSweep 4s linear infinite;pointer-events:none;
+  animation:scanSweep 4s linear infinite;pointer-events:none;will-change:transform;
 }
-@keyframes scanSweep{0%{top:0}100%{top:100vh}}
+@keyframes scanSweep{0%{transform:translateY(0)}100%{transform:translateY(100vh)}}
 
 .page{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:2rem 1rem}
 
@@ -104,11 +112,14 @@ body::after{
 .nav-btn{
   width:32px;height:32px;background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.15);
   color:var(--glow-cyan);display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:0.9rem;transition:all 0.2s ease;
+  cursor:pointer;font-size:0.9rem;transition:all 0.2s ease;font-family:inherit;padding:0;
   clip-path:polygon(15% 0%,85% 0%,100% 15%,100% 85%,85% 100%,15% 100%,0% 85%,0% 15%);
 }
 .nav-btn:hover{background:rgba(0,240,255,0.12);box-shadow:var(--cyan-glow)}
 .nav-btn:active{transform:scale(0.9)}
+.nav-btn:focus-visible,.freq-btn:focus-visible,.upload-link:focus-visible,.download-btn:focus-visible{
+  outline:1px solid var(--glow-cyan);outline-offset:2px;box-shadow:var(--cyan-glow);
+}
 .status-dot{width:6px;height:6px;border-radius:50%;background:var(--glow-green);box-shadow:var(--green-glow);animation:pulse-dot 2s ease-in-out infinite}
 
 .freq-bar{display:flex;gap:2px;margin-top:1.5rem;animation:fadeUp 0.8s ease-out 0.5s both;width:720px;max-width:95vw}
@@ -213,7 +224,7 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
       <div class="inner-panel">
         <div class="viewport" id="screen">
           <img id="animal-img" alt="Transmission feed" />
-          <div class="loader" id="loader"><div class="spinner-ring"></div><span>ACQUIRING SIGNAL...</span></div>
+          <div class="loader" id="loader"><div class="spinner-ring"></div><span aria-live="polite">ACQUIRING SIGNAL...</span></div>
           <div class="ch-overlay" id="ch-indicator">FREQ 01</div>
           <div class="caption-overlay" id="caption-overlay"></div>
           <div class="hud-bar"><span id="hud-left">FEED::ACTIVE</span><span id="hud-right">XENO-SAT III</span></div>
@@ -221,9 +232,9 @@ footer{margin-top:2rem;padding:1rem;text-align:center;color:var(--muted);font-si
         <div class="controls-row">
           <div class="vessel-label">SPECIMEN VIEWER v3.7</div>
           <div class="nav-controls">
-            <div class="nav-btn" onclick="prevChannel()">&#x25C0;</div>
-            <div class="nav-btn" onclick="nextChannel()">&#x25B6;</div>
-            <div class="nav-btn" onclick="downloadImage()" title="Download specimen">&#x2B07;</div>
+            <button class="nav-btn" onclick="prevChannel()" aria-label="Previous channel">&#x25C0;</button>
+            <button class="nav-btn" onclick="nextChannel()" aria-label="Next channel">&#x25B6;</button>
+            <button class="nav-btn" onclick="downloadImage()" title="Download specimen" aria-label="Download specimen">&#x2B07;</button>
             <div class="status-dot"></div>
           </div>
         </div>
@@ -286,11 +297,13 @@ function updateCodename(ch){
   const name=getCodename(ch);
   document.getElementById('info-unit').textContent=name;
   document.getElementById('hud-right').textContent='UNIT: '+name;
+  document.getElementById('animal-img').alt='Daily '+ch+' specimen — unit '+name;
 }
 
 function updateCountdown(){
   const now=new Date(),midnight=new Date(now);midnight.setHours(24,0,0,0);
   const diff=midnight-now;
+  if(now.getDate()!==today.getDate()){location.reload();return}
   const h=String(Math.floor(diff/3600000)).padStart(2,'0');
   const m=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
   const s=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
@@ -352,31 +365,43 @@ document.getElementById('screen').addEventListener('click',function(e){
   }
 });
 
-async function loadAnimal(){
+let _loadToken=0;
+const DAILY_CHANNELS=['cat','frog','bear'];
+function clearCachedUrl(ch){try{localStorage.removeItem(getCacheKey(ch))}catch(e){}}
+
+async function loadAnimal(retried){
+  const token=++_loadToken;
+  const ch=currentChannel;
   const img=document.getElementById('animal-img'),loader=document.getElementById('loader');
   loader.querySelector('span').textContent='ACQUIRING SIGNAL...';
   img.classList.remove('loaded');loader.classList.remove('hidden');
   setCaption('');
-  const cached=(currentChannel==='frog'||currentChannel==='cat'||currentChannel==='bear')?getCachedUrl(currentChannel):null;
-  if(cached){img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};img.src=cached;return}
+  const cached=(DAILY_CHANNELS.includes(ch)&&!retried)?getCachedUrl(ch):null;
+  if(cached){
+    updateCodename(ch);
+    img.onload=()=>{if(token===_loadToken){img.classList.add('loaded');loader.classList.add('hidden')}};
+    img.onerror=()=>{if(token===_loadToken){clearCachedUrl(ch);loadAnimal(true)}};
+    img.src=cached;return;
+  }
   let url='';
   try{
     const dateStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-    if(currentChannel==='cat'){const u=await fetchINaturalist(118552,dayOfYear);if(u)url=u}
-    else if(currentChannel==='frog'){const u=await fetchINaturalist(20979,dayOfYear);if(u)url=u}
-    else if(currentChannel==='bear'){const u=await fetchINaturalist(41636,dayOfYear);if(u)url=u}
-    else if(currentChannel==='memes'){
+    if(ch==='cat'){const u=await fetchINaturalist(118552,dayOfYear);if(u)url=u}
+    else if(ch==='frog'){const u=await fetchINaturalist(20979,dayOfYear);if(u)url=u}
+    else if(ch==='bear'){const u=await fetchINaturalist(41636,dayOfYear);if(u)url=u}
+    else if(ch==='memes'){
       const r=await fetch(WORKER_URL+'/daily-meme?d='+dateStr);
       const d=await r.json();
       if(d.url)url=d.url;
-      if(d.caption)setCaption(d.caption);
+      if(token===_loadToken&&d.caption)setCaption(d.caption);
     }
-  }catch(e){loader.querySelector('span').textContent='NO SIGNAL';return}
+  }catch(e){if(token===_loadToken)loader.querySelector('span').textContent='NO SIGNAL';return}
+  if(token!==_loadToken)return;
   if(!url){loader.querySelector('span').textContent='NO SIGNAL';return}
-  if(currentChannel==='frog'||currentChannel==='cat'||currentChannel==='bear')setCachedUrl(currentChannel,url);
-  updateCodename(currentChannel);
-  img.onload=()=>{img.classList.add('loaded');loader.classList.add('hidden')};
-  img.onerror=()=>{loader.querySelector('span').textContent='SIGNAL LOST'};
+  if(DAILY_CHANNELS.includes(ch))setCachedUrl(ch,url);
+  updateCodename(ch);
+  img.onload=()=>{if(token===_loadToken){img.classList.add('loaded');loader.classList.add('hidden')}};
+  img.onerror=()=>{if(token===_loadToken){clearCachedUrl(ch);loader.querySelector('span').textContent='SIGNAL LOST'}};
   img.src=url;
 }
 
