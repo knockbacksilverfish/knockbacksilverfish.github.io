@@ -376,33 +376,16 @@ function updateCountdown(){
 }
 updateCountdown();setInterval(updateCountdown,1000);
 
-function getCacheKey(ch){return 'specimen_'+ch+'_'+dayOfYear}
+function getCacheKey(ch){return 'specimen2_'+ch+'_'+dayOfYear}
 function getCachedEntry(ch){
   try{const raw=localStorage.getItem(getCacheKey(ch));if(!raw)return null;
   const e=JSON.parse(raw);return (e&&e.url)?e:null}catch(e){return null}
 }
 function setCachedEntry(ch,entry){
-  try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&(k.startsWith('specimen_'+ch+'_')||k.startsWith('esquisse_'))&&k!==getCacheKey(ch))localStorage.removeItem(k)}
+  try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&(k.startsWith('specimen2_'+ch+'_')||k.startsWith('specimen_')||k.startsWith('esquisse_'))&&k!==getCacheKey(ch))localStorage.removeItem(k)}
   localStorage.setItem(getCacheKey(ch),JSON.stringify(entry))}catch(e){}
 }
 function clearCachedEntry(ch){try{localStorage.removeItem(getCacheKey(ch))}catch(e){}}
-
-async function fetchINaturalist(taxonId,dayIndex){
-  const page=(dayIndex%10)+1;
-  const u='https://api.inaturalist.org/v1/observations?taxon_id='+taxonId+'&quality_grade=research&photos=true&per_page=30&page='+page+'&order=desc&order_by=votes';
-  const r=await fetch(u);const d=await r.json();
-  if(!d.results||!d.results.length)return null;
-  const obs=d.results[dayIndex%d.results.length];
-  const url=obs?.photos?.[0]?.url?.replace('square','large')||null;
-  if(!url)return null;
-  return {url,meta:{
-    species:obs.taxon?.name||'',
-    common:obs.taxon?.preferred_common_name||'',
-    place:obs.place_guess||'',
-    date:obs.observed_on||'',
-    attrib:obs.photos?.[0]?.attribution||''
-  }};
-}
 
 function renderDossier(meta){
   const d=document.getElementById('dossier');
@@ -455,7 +438,6 @@ document.getElementById('screen').addEventListener('click',function(e){
 
 let _loadToken=0;
 const DAILY_CHANNELS=['cat','frog','bear'];
-const TAXON={cat:118552,frog:20979,bear:41636};
 
 function showError(loader,msg){
   loader.querySelector('span').textContent=msg;
@@ -481,8 +463,9 @@ async function loadAnimal(retried){
   try{
     const dateStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
     if(DAILY_CHANNELS.includes(ch)){
-      const e=await fetchINaturalist(TAXON[ch],dayOfYear);
-      if(e){url=e.url;meta=e.meta}
+      const r=await fetch(WORKER_URL+'/daily-'+ch+'?d='+dateStr);
+      const d=await r.json();
+      if(d.url){url=d.url;meta=d.meta||null}
     } else if(ch==='memes'){
       const r=await fetch(WORKER_URL+'/daily-meme?d='+dateStr);
       const d=await r.json();
