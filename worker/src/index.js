@@ -74,13 +74,40 @@ function noCache(corsHeaders) {
   return { ...corsHeaders, 'Cache-Control': 'no-store' };
 }
 
-async function dailyFromBucket(env, corsHeaders, workerUrl, prefix, reqUrl) {
-  const list = await env.BUCKET.list({ prefix });
-  const objects = list.objects.filter(o => o.key !== prefix && !o.key.endsWith('/'));
-  if (!objects.length) return json({ error: `No images found in ${prefix}` }, 404, noCache(corsHeaders));
+// Pexels search queries per channel. Curated stock — no carcasses/remains like iNaturalist.
+const PEXELS_QUERY = { cat: 'cat', frog: 'frog', bear: 'wild bear' };
+
+async function dailyPexels(env, corsHeaders, channel, reqUrl) {
+  if (!env.PEXELS_API_KEY) return json({ error: 'Pexels not configured' }, 500, noCache(corsHeaders));
+  const query = PEXELS_QUERY[channel];
+  if (!query) return json({ error: 'Invalid channel' }, 400, noCache(corsHeaders));
+
   const dateStr = reqUrl.searchParams.get('d');
-  const idx = (dateStr ? dayOfYearFromStr(dateStr) : dayOfYear()) % objects.length;
-  return json({ url: `${workerUrl}/img/${objects[idx].key}` }, 200, noCache(corsHeaders));
+  const day = dateStr ? dayOfYearFromStr(dateStr) : dayOfYear();
+  const perPage = 80;
+  const page = (day % 10) + 1;
+  const api = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}&orientation=landscape`;
+
+  const r = await fetch(api, { headers: { Authorization: env.PEXELS_API_KEY } });
+  if (!r.ok) return json({ error: 'Pexels fetch failed' }, 502, noCache(corsHeaders));
+  const d = await r.json();
+  const photos = d.photos || [];
+  if (!photos.length) return json({ error: 'No photos' }, 404, noCache(corsHeaders));
+
+  const p = photos[day % photos.length];
+  const url = p.src?.large2x || p.src?.large || p.src?.original;
+  if (!url) return json({ error: 'No photo url' }, 404, noCache(corsHeaders));
+
+  return json({
+    url,
+    meta: {
+      species: p.alt || query,
+      common: query,
+      place: '',
+      date: '',
+      attrib: `Photo by ${p.photographer || 'Unknown'} / Pexels`,
+    },
+  }, 200, noCache(corsHeaders));
 }
 
 async function dailyMeme(env, corsHeaders, workerUrl) {
@@ -242,8 +269,9 @@ export default {
 
       if (request.method === 'OPTIONS') return new Response(null, { headers: c });
 
-      if (pathname === '/daily-cat'  && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'cats/', url);
-      if (pathname === '/daily-bear' && request.method === 'GET') return dailyFromBucket(env, c, workerUrl, 'bears/', url);
+      if (pathname === '/daily-cat'  && request.method === 'GET') return dailyPexels(env, c, 'cat', url);
+      if (pathname === '/daily-frog' && request.method === 'GET') return dailyPexels(env, c, 'frog', url);
+      if (pathname === '/daily-bear' && request.method === 'GET') return dailyPexels(env, c, 'bear', url);
       if (pathname === '/daily-meme' && request.method === 'GET') return dailyMeme(env, c, workerUrl);
       if (pathname.startsWith('/img/') && request.method === 'GET') return serveImage(env, pathname.slice(5), c);
       if (pathname === '/memes'     && request.method === 'GET')  return listMemes(env, c, workerUrl);
